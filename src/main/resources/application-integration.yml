@@ -1,0 +1,5 @@
+spring:
+  datasource:
+    url: jdbc:tc:mysql:8.0.35:///?user=root?password=test
+  flyway:
+    skip-default-callbacks: true
