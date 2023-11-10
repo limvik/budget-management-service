@@ -95,6 +95,26 @@ public class UserSignupControllerTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.['errorCode']").value(ErrorCode.DUPLICATED_USERNAME.name()))
                 .andExpect(jsonPath("$.['errorReason']").value(ErrorCode.DUPLICATED_USERNAME.getMessage()));
+
+    }
+
+    @Test
+    @DisplayName("유효하지 않은 username, email, password 으로 회원가입")
+    void shouldReturn422UnprocessableEntity() throws Exception {
+        String username = "limvikasfkljasdjlfkasdkljfjskdl";
+        String email = "test.com";
+        String password = "ord";
+        long minimumDailyExpense = 10000;
+        boolean agreeAlarm = true;
+
+        var requestedUserInfo = new SignupRequest(username, email, password, minimumDailyExpense, agreeAlarm);
+
+        mockMvc.perform(post("/api/v1/users/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestJson.write(requestedUserInfo).getJson()))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.['errorCode']").value(ErrorCode.UNPROCESSABLE_USERINFO.name()))
+                .andExpect(jsonPath("$.['errorReason']").value(ErrorCode.UNPROCESSABLE_USERINFO.getMessage()));
     }
 
 }

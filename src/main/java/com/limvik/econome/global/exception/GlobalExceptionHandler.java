@@ -33,8 +33,9 @@ public class GlobalExceptionHandler {
             log.info("error.getDefaultMessage() = {} ", error.getDefaultMessage());
         }
 
-        String errorReason = errors.get(0).getDefaultMessage();
-        return new ErrorResponse(HttpStatus.UNPROCESSABLE_ENTITY.name(), errorReason);
+        // TODO: 각 항목에 대한 구체적인 메시지를 전송하기 위한 리팩터링 필요
+        // String errorReason = errors.get(0).getDefaultMessage();
+        return new ErrorResponse(ErrorCode.UNPROCESSABLE_USERINFO.name(), ErrorCode.UNPROCESSABLE_USERINFO.getMessage());
     }
 
     @ExceptionHandler(JsonProcessingException.class)
