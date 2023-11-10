@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.limvik.econome.domain.user.entity.User;
 import com.limvik.econome.domain.user.service.UserService;
 import com.limvik.econome.global.config.WebAuthorizationConfig;
+import com.limvik.econome.global.exception.ErrorCode;
+import com.limvik.econome.global.exception.ErrorException;
 import com.limvik.econome.web.user.dto.SignupRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -20,12 +22,11 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.restdocs.mockmvc.RestDocumentationRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(controllers = UserController.class)
 @Import(WebAuthorizationConfig.class)
-public class UserControllerTest {
+public class UserSignupControllerTest {
 
     @Autowired
     MockMvc mockMvc;
@@ -70,6 +71,30 @@ public class UserControllerTest {
                         .content(requestJson.write(requestedUserInfo).getJson()))
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", "/api/v1/users/" + userId));
+    }
+
+    @Test
+    @DisplayName("중복된 username 으로 회원가입")
+    void shouldReturn409Conflict() throws Exception {
+
+        String username = "limvik";
+        String email = "limvik@limvik.com";
+        String password = "limvikpassword";
+        String encodedPassword = "$2a$12$dNSsw8M8NoAghJ6KJKzQM.fc8p9ysnufwYGhqjbasIWfjqt6axLMW";
+        long minimumDailyExpense = 10000;
+        boolean agreeAlarm = true;
+
+        var requestedUserInfo = new SignupRequest(username, email, password, minimumDailyExpense, agreeAlarm);
+
+        given(userService.createUser(any(User.class))).willThrow(new ErrorException(ErrorCode.DUPLICATED_USERNAME));
+        given(passwordEncoder.encode(password)).willReturn(encodedPassword);
+
+        mockMvc.perform(post("/api/v1/users/signup")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(requestJson.write(requestedUserInfo).getJson()))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.['errorCode']").value(ErrorCode.DUPLICATED_USERNAME.name()))
+                .andExpect(jsonPath("$.['errorReason']").value(ErrorCode.DUPLICATED_USERNAME.getMessage()));
     }
 
 }
