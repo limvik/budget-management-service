@@ -1,12 +1,16 @@
 package com.limvik.econome.global.config;
 
 import com.limvik.econome.domain.user.service.UserService;
+import com.limvik.econome.global.security.filter.JwtFilter;
 import com.limvik.econome.global.security.filter.UsernamePasswordAuthenticationFilter;
+import com.limvik.econome.global.security.jwt.provider.JwtAuthenticationProvider;
+import com.limvik.econome.global.security.jwt.provider.JwtProvider;
 import com.limvik.econome.infrastructure.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -28,6 +32,7 @@ public class WebAuthorizationConfig {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtProvider jwtProvider;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -51,6 +56,8 @@ public class WebAuthorizationConfig {
                 .sessionManagement(config -> config.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterAfter(new UsernamePasswordAuthenticationFilter(getDaoProviderManager()),
                         RequestCacheAwareFilter.class)
+                .addFilterAfter(new JwtFilter(getJwtProviderManager()),
+                        RequestCacheAwareFilter.class)
                 .build();
     }
 
@@ -69,5 +76,12 @@ public class WebAuthorizationConfig {
         daoAuthenticationProvider.setUserDetailsService(new UserService(userRepository, null));
         daoAuthenticationProvider.setPasswordEncoder(passwordEncoder);
         return daoAuthenticationProvider;
+    }
+
+    /**
+     * JWT 인증 시 사용할 ProviderManager에 구체적인 Provider를 지정하여 반환합니다.
+     */
+    private AuthenticationManager getJwtProviderManager() {
+        return new ProviderManager(new JwtAuthenticationProvider(jwtProvider));
     }
 }

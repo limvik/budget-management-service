@@ -7,6 +7,7 @@ import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Date;
@@ -21,14 +22,18 @@ public class JwtProvider {
     private final JwtConfig jwtConfig;
 
     public String generateAccessToken(User user) {
-        return generateToken(user, Duration.ofMinutes(jwtConfig.getAccessTokenExpirationMinutes()).toMillis());
+        long expirationTime = Duration.ofMinutes(jwtConfig.getAccessTokenExpirationMinutes()).toMillis();
+        SecretKey secretKey = Keys.hmacShaKeyFor(jwtConfig.getAccessKey().getBytes(StandardCharsets.UTF_8));
+        return generateToken(user, expirationTime, secretKey);
     }
 
     public String generateRefreshToken(User user) {
-        return generateToken(user, Duration.ofDays(jwtConfig.getRefreshTokenExpirationDays()).toMillis());
+        long expirationTime = Duration.ofDays(jwtConfig.getRefreshTokenExpirationDays()).toMillis();
+        SecretKey secretKey = Keys.hmacShaKeyFor(jwtConfig.getRefreshKey().getBytes(StandardCharsets.UTF_8));
+        return generateToken(user, expirationTime, secretKey);
     }
 
-    private String generateToken(User user, long expirationTime) {
+    private String generateToken(User user, long expirationTime, SecretKey secretKey) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expirationTime);
         return Jwts.builder()
@@ -38,16 +43,24 @@ public class JwtProvider {
                 .issuedAt(now)
                 .expiration(expiryDate)
                 .subject(user.getId().toString())
-                .signWith(Keys.hmacShaKeyFor(jwtConfig.getKey().getBytes(StandardCharsets.UTF_8)))
+                .signWith(secretKey)
                 .compact();
     }
 
-    public Jws<Claims> parse(String token) {
+    public Jws<Claims> parse(String token, SecretKey secretKey) {
         return Jwts.parser()
                 .requireIssuer(jwtConfig.getIssuer())
-                .verifyWith(Keys.hmacShaKeyFor(jwtConfig.getKey().getBytes(StandardCharsets.UTF_8)))
+                .verifyWith(secretKey)
                 .build()
                 .parseSignedClaims(token);
+    }
+
+    public SecretKey getAccessKey() {
+        return Keys.hmacShaKeyFor(jwtConfig.getAccessKey().getBytes(StandardCharsets.UTF_8));
+    }
+
+    public SecretKey getRefreshKey() {
+        return Keys.hmacShaKeyFor(jwtConfig.getRefreshKey().getBytes(StandardCharsets.UTF_8));
     }
 
 }
