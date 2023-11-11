@@ -66,7 +66,7 @@ public class WebAuthorizationConfig {
      */
     private DaoAuthenticationProvider getDaoAuthenticationProvider() {
         var daoAuthenticationProvider = new DaoAuthenticationProvider();
-        daoAuthenticationProvider.setUserDetailsService(new UserService(userRepository));
+        daoAuthenticationProvider.setUserDetailsService(new UserService(userRepository, null));
         daoAuthenticationProvider.setPasswordEncoder(passwordEncoder);
         return daoAuthenticationProvider;
     }

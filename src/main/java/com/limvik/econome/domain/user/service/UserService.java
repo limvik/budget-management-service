@@ -4,6 +4,7 @@ import com.limvik.econome.domain.user.entity.User;
 import com.limvik.econome.global.exception.ErrorCode;
 import com.limvik.econome.global.exception.ErrorException;
 import com.limvik.econome.global.security.AuthUser;
+import com.limvik.econome.global.security.jwt.provider.JwtProvider;
 import com.limvik.econome.infrastructure.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,6 +20,7 @@ import java.util.Map;
 public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
+    private final JwtProvider jwtProvider;
 
     @Transactional
     public User createUser(User user) {
@@ -39,7 +41,8 @@ public class UserService implements UserDetailsService {
 
     @Transactional(readOnly = true)
     public Map<String, String> getTokens(User user) {
-        return null;
+        return Map.of("accessToken", jwtProvider.generateAccessToken(user),
+                      "refreshToken", jwtProvider.generateRefreshToken(user));
     }
 
     @Transactional(readOnly = true)
