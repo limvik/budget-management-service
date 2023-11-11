@@ -2,16 +2,16 @@ package com.limvik.econome.global.security;
 
 import lombok.Getter;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.User;
+import com.limvik.econome.domain.user.entity.User;
 
 import java.util.List;
 
 @Getter
-public class AuthUser extends User {
+public class AuthUser extends org.springframework.security.core.userdetails.User {
 
-    private final com.limvik.econome.domain.user.entity.User user;
+    private final User user;
 
-    public AuthUser(com.limvik.econome.domain.user.entity.User user) {
+    public AuthUser(User user) {
         super(user.getUsername(), user.getPassword(), List.of(new SimpleGrantedAuthority("ROLE_USER")));
         this.user = user;
     }
