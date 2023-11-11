@@ -6,6 +6,7 @@ import com.limvik.econome.domain.user.service.UserService;
 import com.limvik.econome.global.config.WebAuthorizationConfig;
 import com.limvik.econome.global.exception.ErrorCode;
 import com.limvik.econome.global.exception.ErrorException;
+import com.limvik.econome.infrastructure.user.UserRepository;
 import com.limvik.econome.web.user.dto.SignupRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -36,6 +37,9 @@ public class UserSignupControllerTest {
 
     @MockBean
     PasswordEncoder passwordEncoder;
+
+    @MockBean
+    UserRepository userRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
