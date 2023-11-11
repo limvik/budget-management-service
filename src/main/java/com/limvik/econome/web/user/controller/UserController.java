@@ -2,10 +2,13 @@ package com.limvik.econome.web.user.controller;
 
 import com.limvik.econome.domain.user.entity.User;
 import com.limvik.econome.domain.user.service.UserService;
+import com.limvik.econome.global.security.AuthUser;
+import com.limvik.econome.web.user.dto.SigninResponse;
 import com.limvik.econome.web.user.dto.SignupRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
+import java.util.Map;
 
 @RequiredArgsConstructor
 @RestController
@@ -36,5 +40,11 @@ public class UserController {
                 .minimumDailyExpense(signupRequest.minimumDailyExpense())
                 .agreeAlarm(signupRequest.agreeAlarm())
                 .build();
+    }
+
+    @PostMapping("/signin")
+    public ResponseEntity<SigninResponse> signin(@AuthenticationPrincipal AuthUser authUser) {
+        Map<String, String> tokens = userService.getTokens(authUser.getUser());
+        return ResponseEntity.ok(new SigninResponse(tokens.get("accessToken"), tokens.get("refreshToken")));
     }
 }
