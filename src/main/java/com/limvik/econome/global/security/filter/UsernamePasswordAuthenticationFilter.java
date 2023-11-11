@@ -9,7 +9,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -48,10 +47,8 @@ public class UsernamePasswordAuthenticationFilter extends OncePerRequestFilter {
 
         UsernamePasswordAuthenticationToken token = getTokenFromRequest(request, response);
 
-        if (token == null) {
-            filterChain.doFilter(request, response);
+        if (token == null)
             return;
-        }
 
         try {
             Authentication authenticationResult = this.authenticationManager.authenticate(token);
@@ -62,7 +59,7 @@ public class UsernamePasswordAuthenticationFilter extends OncePerRequestFilter {
 
             filterChain.doFilter(request, response);
         } catch (AuthenticationException e) {
-            setUnauthorizedResponse(response);
+            setErrorResponse(response, new ErrorException(ErrorCode.NOT_EXIST_USER));
         }
     }
 
@@ -76,24 +73,15 @@ public class UsernamePasswordAuthenticationFilter extends OncePerRequestFilter {
         try {
             return new UsernamePasswordAuthenticationConverter().convert(request);
         } catch (ErrorException e) {
-            setUnprocessableEntityResponse(response);
+            setErrorResponse(response, e);
         }
         return null;
     }
 
-    private void setUnprocessableEntityResponse(HttpServletResponse response) throws IOException {
-        response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
+    private void setErrorResponse(HttpServletResponse response, ErrorException e) throws IOException {
+        response.setStatus(e.getErrorCode().getHttpStatus().value());
         String jsonResponse = new ObjectMapper().writeValueAsString(
-                new ErrorResponse(ErrorCode.UNPROCESSABLE_USERINFO.name(),
-                        ErrorCode.UNPROCESSABLE_USERINFO.getMessage()));
-        response.getWriter().write(jsonResponse);
-    }
-
-    private void setUnauthorizedResponse(HttpServletResponse response) throws IOException {
-        response.setStatus(HttpStatus.UNAUTHORIZED.value());
-        String jsonResponse = new ObjectMapper().writeValueAsString(
-                new ErrorResponse(ErrorCode.NOT_EXIST_USER.name(),
-                        ErrorCode.NOT_EXIST_USER.getMessage()));
+                new ErrorResponse(e.getErrorCode().name(), e.getMessage()));
         response.getWriter().write(jsonResponse);
     }
 
