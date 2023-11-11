@@ -3,14 +3,20 @@ package com.limvik.econome.domain.user.service;
 import com.limvik.econome.domain.user.entity.User;
 import com.limvik.econome.global.exception.ErrorCode;
 import com.limvik.econome.global.exception.ErrorException;
+import com.limvik.econome.global.security.AuthUser;
 import com.limvik.econome.infrastructure.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
+
 @RequiredArgsConstructor
 @Service
-public class UserService {
+public class UserService implements UserDetailsService {
 
     private final UserRepository userRepository;
 
@@ -31,4 +37,16 @@ public class UserService {
             throw new ErrorException(ErrorCode.DUPLICATED_EMAIL);
     }
 
+    @Transactional(readOnly = true)
+    public Map<String, String> getTokens(User user) {
+        return null;
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        var user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException(ErrorCode.NOT_EXIST_USER.getMessage()));
+        return new AuthUser(user);
+    }
 }
