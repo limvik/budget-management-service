@@ -29,3 +29,9 @@ spring:
     properties:
       hibernate:
         format_sql: true
+
+jwt:
+  issuer: ${JWT_ISSUER}
+  key: ${JWT_KEY}
+  access-token-expiration-minutes: 10
+  refresh-token-expiration-days: 30
