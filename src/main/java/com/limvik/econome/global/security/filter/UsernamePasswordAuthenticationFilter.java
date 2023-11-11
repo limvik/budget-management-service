@@ -39,12 +39,19 @@ public class UsernamePasswordAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
+        if(!request.getRequestURI().contains("signin")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         setResponseProperties(response);
 
         UsernamePasswordAuthenticationToken token = getTokenFromRequest(request, response);
 
-        if (token == null)
+        if (token == null) {
             filterChain.doFilter(request, response);
+            return;
+        }
 
         try {
             Authentication authenticationResult = this.authenticationManager.authenticate(token);
