@@ -31,7 +31,8 @@ class EconomeApplicationTests {
 	@DisplayName("JWT 설정 기본값 정상 로딩")
 	void jwtConfigDataLoads() {
 		assertThat(jwtConfig.getIssuer()).isNotNull();
-		assertThat(jwtConfig.getKey()).isNotNull();
+		assertThat(jwtConfig.getAccessKey()).isNotNull();
+		assertThat(jwtConfig.getRefreshKey()).isNotNull();
 		assertThat(jwtConfig.getAccessTokenExpirationMinutes()).isNotNull();
 		assertThat(jwtConfig.getRefreshTokenExpirationDays()).isNotNull();
 	}

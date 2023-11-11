@@ -32,6 +32,7 @@ spring:
 
 jwt:
   issuer: ${JWT_ISSUER}
-  key: ${JWT_KEY}
+  access-key: ${JWT_ACCESS_KEY}
+  refresh-key: ${JWT_REFRESH_KEY}
   access-token-expiration-minutes: 10
   refresh-token-expiration-days: 30
