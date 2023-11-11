@@ -8,7 +8,8 @@ import com.limvik.econome.global.security.jwt.exception.JwtError;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.security.InvalidKeyException;
+import io.jsonwebtoken.security.SignatureException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -21,6 +22,7 @@ import java.util.Objects;
  * JWT의 인증작업을 수행하는 클래스입니다.
  * Spring Security의 {@link org.springframework.security.authentication.ProviderManager} 의 인수로 사용됩니다.
  */
+@Slf4j
 public class JwtAuthenticationProvider implements AuthenticationProvider {
 
     private final JwtProvider jwtProvider;
@@ -39,25 +41,26 @@ public class JwtAuthenticationProvider implements AuthenticationProvider {
             throws AuthenticationException {
         var bearerToken = (BearerAuthenticationToken) authentication;
         Jws<Claims> jws = parseToken(bearerToken.getToken());
-        return getAuthenticatedToken(jws);
+        return getAuthenticatedToken(jws, bearerToken.getToken());
     }
 
     private Jws<Claims> parseToken(String token) {
         Jws<Claims> jws;
         try {
             jws = jwtProvider.parse(token, jwtProvider.getAccessKey());
-        } catch (InvalidKeyException e){
+        } catch (SignatureException e){
             jws = jwtProvider.parse(token, jwtProvider.getRefreshKey());
+            log.info("Refresh Access Token By Refresh Token");
         } catch (JwtException e) {
             var error = new JwtError(ErrorCode.INVALID_TOKEN.name(), ErrorCode.INVALID_TOKEN.getHttpStatus());
             throw new JwtAuthenticationException(error, ErrorCode.INVALID_TOKEN.getMessage());
         }
+        log.info("Parse Refresh Token");
         return jws;
     }
 
-    private Authentication getAuthenticatedToken(Jws<Claims> jws) {
-        var auth = new JwtAuthenticationToken(jws, List.of(new SimpleGrantedAuthority("USER")));
-        auth.setAuthenticated(true);
+    private Authentication getAuthenticatedToken(Jws<Claims> jws, String tokenString) {
+        var auth = new JwtAuthenticationToken(jws, tokenString, List.of(new SimpleGrantedAuthority("USER")));
         auth.setPrincipal(Objects.requireNonNull(jws).getPayload().getSubject());
         return auth;
     }

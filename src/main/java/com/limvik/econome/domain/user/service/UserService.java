@@ -39,10 +39,20 @@ public class UserService implements UserDetailsService {
             throw new ErrorException(ErrorCode.DUPLICATED_EMAIL);
     }
 
-    @Transactional(readOnly = true)
     public Map<String, String> getTokens(User user) {
         return Map.of("accessToken", jwtProvider.generateAccessToken(user),
                       "refreshToken", jwtProvider.generateRefreshToken(user));
+    }
+
+    @Transactional(readOnly = true)
+    public boolean matchRefreshToken(User user) {
+        return userRepository.existsByIdAndRefreshToken(user.getId(), user.getRefreshToken());
+
+    }
+
+    @Transactional
+    public User updateUser(User user) {
+        return userRepository.save(user);
     }
 
     @Transactional(readOnly = true)

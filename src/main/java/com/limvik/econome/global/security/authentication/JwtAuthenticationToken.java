@@ -16,19 +16,17 @@ public class JwtAuthenticationToken extends AbstractAuthenticationToken {
 
     private final Jws<Claims> token;
 
+    private final String tokenString;
+
     private Object credentials;
 
     private Object principal;
 
-    public JwtAuthenticationToken(Jws<Claims> token) {
-        super(null);
-        this.token = token;
-    }
-
-    public JwtAuthenticationToken(Jws<Claims> token, Collection<? extends GrantedAuthority> authorities) {
+    public JwtAuthenticationToken(Jws<Claims> token, String tokenString, Collection<? extends GrantedAuthority> authorities) {
         super(authorities);
-        this.setAuthenticated(true);
         this.token = token;
+        this.tokenString = tokenString;
+        this.setAuthenticated(true);
     }
 
     @Override
@@ -47,6 +45,10 @@ public class JwtAuthenticationToken extends AbstractAuthenticationToken {
 
     public Claims getClaims() {
         return token.getPayload();
+    }
+
+    public String getTokenString() {
+        return tokenString;
     }
 
 }

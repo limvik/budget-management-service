@@ -2,12 +2,18 @@ package com.limvik.econome.web.user.controller;
 
 import com.limvik.econome.domain.user.entity.User;
 import com.limvik.econome.domain.user.service.UserService;
+import com.limvik.econome.global.exception.ErrorCode;
+import com.limvik.econome.global.exception.ErrorException;
 import com.limvik.econome.global.security.AuthUser;
+import com.limvik.econome.global.security.authentication.JwtAuthenticationToken;
 import com.limvik.econome.web.user.dto.SigninResponse;
 import com.limvik.econome.web.user.dto.SignupRequest;
+import com.limvik.econome.web.user.dto.TokenResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.net.URI;
 import java.util.Map;
 
+@Slf4j
 @RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/v1/users")
@@ -44,7 +51,41 @@ public class UserController {
 
     @PostMapping("/signin")
     public ResponseEntity<SigninResponse> signin(@AuthenticationPrincipal AuthUser authUser) {
-        Map<String, String> tokens = userService.getTokens(authUser.getUser());
-        return ResponseEntity.ok(new SigninResponse(tokens.get("accessToken"), tokens.get("refreshToken")));
+        var user = authUser.getUser();
+        Map<String, String> tokens = userService.getTokens(user);
+        String accessToken = tokens.get("accessToken");
+        String refreshToken = tokens.get("refreshToken");
+        updateRefreshToken(user, refreshToken);
+        return ResponseEntity.ok(new SigninResponse(accessToken, refreshToken));
     }
+
+    private void updateRefreshToken(User user, String refreshToken) {
+        user.setRefreshToken(refreshToken);
+        userService.updateUser(user);
+    }
+
+    @PostMapping("/token")
+    public ResponseEntity<TokenResponse> token(Authentication authentication) {
+        JwtAuthenticationToken token = (JwtAuthenticationToken) authentication;
+        long userId = getUserId(token);
+        log.info("refresh token userId: {}", userId);
+        User user = User.builder().id(userId).refreshToken(token.getTokenString()).build();
+        if (userService.matchRefreshToken(user)) {
+            Map<String, String> tokens = userService.getTokens(user);
+            return ResponseEntity.ok(new TokenResponse(tokens.get("accessToken")));
+        } else {
+            log.info("유효한 토큰이지만 데이터베이스 refersh token과 다름");
+            throw new ErrorException(ErrorCode.INVALID_TOKEN);
+        }
+    }
+
+    private long getUserId(JwtAuthenticationToken token) {
+        try {
+            return Long.parseLong(token.getClaims().getSubject());
+        } catch (Exception e) {
+            log.info("Authentication 객체에 저장된 사용자 정보가 없습니다.");
+            throw new ErrorException(ErrorCode.INVALID_TOKEN);
+        }
+    }
+
 }
