@@ -5,6 +5,7 @@ import com.limvik.econome.domain.user.entity.User;
 import com.limvik.econome.domain.user.service.UserService;
 import com.limvik.econome.global.config.WebAuthorizationConfig;
 import com.limvik.econome.global.exception.ErrorCode;
+import com.limvik.econome.global.security.jwt.provider.JwtProvider;
 import com.limvik.econome.infrastructure.user.UserRepository;
 import com.limvik.econome.web.user.dto.SigninRequest;
 import com.limvik.econome.web.user.dto.SigninResponse;
@@ -18,7 +19,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
-import org.testcontainers.shaded.org.apache.commons.lang3.ObjectUtils;
 
 import java.util.Map;
 import java.util.Optional;
@@ -41,6 +41,9 @@ public class UserSigninControllerTest {
 
     @MockBean
     PasswordEncoder passwordEncoder;
+
+    @MockBean
+    JwtProvider jwtProvider;
 
     @MockBean
     UserRepository userRepository;

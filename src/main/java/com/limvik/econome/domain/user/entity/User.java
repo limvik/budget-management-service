@@ -38,6 +38,7 @@ public class User {
     @CreationTimestamp
     private Instant createTime;
 
+    @Setter
     @Column
     private String refreshToken;
 
