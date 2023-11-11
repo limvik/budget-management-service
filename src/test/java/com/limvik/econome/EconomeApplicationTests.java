@@ -1,8 +1,11 @@
 package com.limvik.econome;
 
+import com.jayway.jsonpath.DocumentContext;
+import com.jayway.jsonpath.JsonPath;
 import com.limvik.econome.domain.user.entity.User;
 import com.limvik.econome.global.config.JwtConfig;
 import com.limvik.econome.global.security.jwt.provider.JwtProvider;
+import com.limvik.econome.infrastructure.user.UserRepository;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -22,6 +25,9 @@ class EconomeApplicationTests {
 
 	@Autowired
 	JwtProvider jwtProvider;
+
+	@Autowired
+	UserRepository userRepository;
 
 	@Autowired
 	TestRestTemplate restTemplate;
@@ -87,6 +93,36 @@ class EconomeApplicationTests {
 				"/api/v1/test", HttpMethod.POST, request, String.class);
 
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+	}
+
+	@Test
+	@DisplayName("refresh token으로 access token 재발급")
+	void shouldReturnAccessTokenIfValidRefreshToken() {
+		var user = User.builder().id(1L)
+				.username("refresh")
+				.email("refresh@refresh.com")
+				.password("password")
+				.minimumDailyExpense(10000)
+				.agreeAlarm(true)
+				.build();
+		String refreshToken = jwtProvider.generateRefreshToken(user);
+		user.setRefreshToken(refreshToken);
+		userRepository.save(user);
+
+		var headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.set("Authorization", "Bearer " + refreshToken);
+
+		HttpEntity<String> request = new HttpEntity<>(null, headers);
+		ResponseEntity<String> response = restTemplate.exchange(
+				"/api/v1/users/token", HttpMethod.POST, request, String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		DocumentContext documentContext = JsonPath.parse(response.getBody());
+
+		String accessToken = documentContext.read("$.accessToken");
+		assertThat(accessToken).isNotNull();
 	}
 
 }
