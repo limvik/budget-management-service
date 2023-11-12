@@ -2,6 +2,7 @@ package com.limvik.econome.web.category;
 
 import com.limvik.econome.domain.category.service.CategoryService;
 import com.limvik.econome.global.config.WebAuthorizationConfig;
+import com.limvik.econome.global.exception.ErrorCode;
 import com.limvik.econome.global.security.jwt.provider.JwtProvider;
 import com.limvik.econome.infrastructure.user.UserRepository;
 import com.limvik.econome.web.category.controller.CategoryController;
@@ -50,6 +51,17 @@ public class CategoryControllerTest {
                 .andExpect(jsonPath("$.['categories'][11]['id']").value(12))
                 .andExpect(jsonPath("$.['categories'][11]['name']").value("기타 상품/서비스"))
                 .andExpect(jsonPath("$.['categories'][12]['id']").doesNotExist());
+
+    }
+
+    @Test
+    @DisplayName("인증되지 않은 사용자의 카테고리 목록 요청")
+    void shouldReturn401Unauthorized() throws Exception {
+
+        mockMvc.perform(get("/api/v1/categories"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.['errorCode']").value(ErrorCode.INVALID_TOKEN.name()))
+                .andExpect(jsonPath("$.['errorReason']").value(ErrorCode.INVALID_TOKEN.getMessage()));
 
     }
 
