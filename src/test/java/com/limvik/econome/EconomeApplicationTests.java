@@ -2,9 +2,12 @@ package com.limvik.econome;
 
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
+import com.limvik.econome.domain.category.entity.Category;
+import com.limvik.econome.domain.category.enums.BudgetCategory;
 import com.limvik.econome.domain.user.entity.User;
 import com.limvik.econome.global.config.JwtConfig;
 import com.limvik.econome.global.security.jwt.provider.JwtProvider;
+import com.limvik.econome.infrastructure.category.CategoryRepository;
 import com.limvik.econome.infrastructure.user.UserRepository;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +15,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
 import org.springframework.test.context.ActiveProfiles;
+
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -28,6 +35,9 @@ class EconomeApplicationTests {
 
 	@Autowired
 	UserRepository userRepository;
+
+	@Autowired
+	CategoryRepository categoryRepository;
 
 	@Autowired
 	TestRestTemplate restTemplate;
@@ -123,6 +133,18 @@ class EconomeApplicationTests {
 
 		String accessToken = documentContext.read("$.accessToken");
 		assertThat(accessToken).isNotNull();
+	}
+
+	@Test
+	@DisplayName("카테고리 목록 저장 여부 확인")
+	void shouldSaveAllCategoriesInEnum() {
+		List<Category> categories = categoryRepository.findAll();
+		categories.sort(Comparator.comparing(Category::getId));
+		BudgetCategory[] budgetCategories = BudgetCategory.values();
+		assertThat(categories.size()).isEqualTo(budgetCategories.length);
+		for (int i = 0; i < budgetCategories.length; i++) {
+			assertThat(categories.get(i).getName()).isEqualTo(budgetCategories[i]);
+		}
 	}
 
 }

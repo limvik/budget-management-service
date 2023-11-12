@@ -3,6 +3,7 @@ package com.limvik.econome.global.config;
 import com.limvik.econome.domain.user.service.UserService;
 import com.limvik.econome.global.security.filter.JwtFilter;
 import com.limvik.econome.global.security.filter.UsernamePasswordAuthenticationFilter;
+import com.limvik.econome.global.security.jwt.entrypoint.JwtEntryPoint;
 import com.limvik.econome.global.security.jwt.provider.JwtAuthenticationProvider;
 import com.limvik.econome.global.security.jwt.provider.JwtProvider;
 import com.limvik.econome.infrastructure.user.UserRepository;
@@ -58,7 +59,9 @@ public class WebAuthorizationConfig {
                         RequestCacheAwareFilter.class)
                 .addFilterAfter(new JwtFilter(getJwtProviderManager()),
                         RequestCacheAwareFilter.class)
+                .exceptionHandling(exc -> exc.authenticationEntryPoint(new JwtEntryPoint()))
                 .build();
+
     }
 
     /**

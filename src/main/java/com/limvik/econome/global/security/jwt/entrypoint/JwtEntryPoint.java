@@ -1,11 +1,11 @@
 package com.limvik.econome.global.security.jwt.entrypoint;
 
-import com.limvik.econome.global.security.jwt.exception.JwtAuthenticationException;
-import com.limvik.econome.global.security.jwt.exception.JwtError;
-import com.limvik.econome.global.security.jwt.handler.JwtErrorHandler;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.limvik.econome.global.exception.ErrorCode;
+import com.limvik.econome.global.exception.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 
@@ -16,23 +16,15 @@ import java.io.IOException;
  */
 public class JwtEntryPoint implements AuthenticationEntryPoint {
 
-    private final JwtErrorHandler handler = new JwtErrorHandler();
-
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response,
-                         AuthenticationException authException) {
-        if (authException instanceof JwtAuthenticationException e) {
+                         AuthenticationException authException) throws IOException {
+        response.addHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer");
+        response.setStatus(ErrorCode.INVALID_TOKEN.getHttpStatus().value());
+        String jsonResponse = new ObjectMapper().writeValueAsString(
+                new ErrorResponse(ErrorCode.INVALID_TOKEN.name(), ErrorCode.INVALID_TOKEN.getMessage()));
+        response.getWriter().write(jsonResponse);
 
-            JwtError error = e.getError();
-
-            this.handler.handle(
-                    request,
-                    response,
-                    error.getHttpStatus(), error.getErrorCode(),
-                    error.getDescription(), error.getUri());
-        } else {
-            this.handler.handle(request, response, HttpStatus.UNAUTHORIZED);
-        }
     }
 
 }
