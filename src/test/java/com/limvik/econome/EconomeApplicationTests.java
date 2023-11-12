@@ -9,6 +9,8 @@ import com.limvik.econome.global.config.JwtConfig;
 import com.limvik.econome.global.security.jwt.provider.JwtProvider;
 import com.limvik.econome.infrastructure.category.CategoryRepository;
 import com.limvik.econome.infrastructure.user.UserRepository;
+import com.limvik.econome.web.budgetplan.dto.BudgetPlanListRequest;
+import com.limvik.econome.web.budgetplan.dto.BudgetPlanRequest;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,7 +18,7 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.util.Collections;
+import java.net.URI;
 import java.util.Comparator;
 import java.util.List;
 
@@ -41,6 +43,22 @@ class EconomeApplicationTests {
 
 	@Autowired
 	TestRestTemplate restTemplate;
+
+	User user;
+
+	@BeforeAll
+	void setup() {
+		user = User.builder().id(1L)
+				.username("test")
+				.email("test@test.com")
+				.password("password")
+				.minimumDailyExpense(10000)
+				.agreeAlarm(true)
+				.build();
+		String refreshToken = jwtProvider.generateRefreshToken(user);
+		user.setRefreshToken(refreshToken);
+		userRepository.save(user);
+	}
 
 	@Test
 	void contextLoads() {
@@ -145,6 +163,38 @@ class EconomeApplicationTests {
 		for (int i = 0; i < budgetCategories.length; i++) {
 			assertThat(categories.get(i).getName()).isEqualTo(budgetCategories[i]);
 		}
+	}
+
+	@Test
+	@DisplayName("인증된 사용자의 정상적인 예산 설정")
+	void shouldCreateBudgetPlanIfValidUser() {
+		var categoryId1 = 1L;
+		var categoryId2 = 2L;
+		var categoryId3 = 3L;
+		var amount1 = 1000L;
+		var amount2 = 2000L;
+		var amount3 = 3000L;
+		var request1 = new BudgetPlanRequest(categoryId1, amount1);
+		var request2 = new BudgetPlanRequest(categoryId2, amount2);
+		var request3 = new BudgetPlanRequest(categoryId3, amount3);
+		var requestList = new BudgetPlanListRequest(List.of(request1, request2, request3));
+
+		var year = 2023;
+		var month = 11;
+
+		String accessToken = jwtProvider.generateAccessToken(user);
+
+		var headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.set("Authorization", "Bearer " + accessToken);
+		String url = "/api/v1/budget-plans?year=%d&month=%d".formatted(year, month);
+
+		HttpEntity<BudgetPlanListRequest> request = new HttpEntity<>(requestList, headers);
+		ResponseEntity<String> response = restTemplate.exchange(
+				url, HttpMethod.POST, request, String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+		assertThat(response.getHeaders().getLocation()).isEqualTo(URI.create(url));
 	}
 
 }
