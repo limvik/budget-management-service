@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS `users` (
 
 CREATE TABLE IF NOT EXISTS `categories` (
     `id` BIGINT NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(32) NOT NULL,
+    `name` VARCHAR(255) NOT NULL,
     PRIMARY KEY (`id`),
     UNIQUE INDEX `name_UNIQUE` (`name` ASC) VISIBLE)
     ENGINE = InnoDB
