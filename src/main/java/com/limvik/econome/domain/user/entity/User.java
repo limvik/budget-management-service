@@ -1,11 +1,12 @@
 package com.limvik.econome.domain.user.entity;
 
+import com.limvik.econome.domain.budgetplan.entity.BudgetPlan;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Min;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.Instant;
+import java.util.List;
 
 @Builder
 @Getter
@@ -41,5 +42,8 @@ public class User {
     @Setter
     @Column
     private String refreshToken;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<BudgetPlan> budgetPlans;
 
 }

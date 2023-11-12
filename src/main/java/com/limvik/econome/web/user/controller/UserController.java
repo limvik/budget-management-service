@@ -9,6 +9,7 @@ import com.limvik.econome.global.security.authentication.JwtAuthenticationToken;
 import com.limvik.econome.web.user.dto.SigninResponse;
 import com.limvik.econome.web.user.dto.SignupRequest;
 import com.limvik.econome.web.user.dto.TokenResponse;
+import com.limvik.econome.web.util.UserUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -67,7 +68,7 @@ public class UserController {
     @PostMapping("/token")
     public ResponseEntity<TokenResponse> token(Authentication authentication) {
         JwtAuthenticationToken token = (JwtAuthenticationToken) authentication;
-        long userId = getUserId(token);
+        long userId = UserUtil.getUserIdFromJwt(token);
         log.info("refresh token userId: {}", userId);
         User user = User.builder().id(userId).refreshToken(token.getTokenString()).build();
         if (userService.matchRefreshToken(user)) {
@@ -75,15 +76,6 @@ public class UserController {
             return ResponseEntity.ok(new TokenResponse(tokens.get("accessToken")));
         } else {
             log.info("유효한 토큰이지만 데이터베이스 refersh token과 다름");
-            throw new ErrorException(ErrorCode.INVALID_TOKEN);
-        }
-    }
-
-    private long getUserId(JwtAuthenticationToken token) {
-        try {
-            return Long.parseLong(token.getClaims().getSubject());
-        } catch (Exception e) {
-            log.info("Authentication 객체에 저장된 사용자 정보가 없습니다.");
             throw new ErrorException(ErrorCode.INVALID_TOKEN);
         }
     }
