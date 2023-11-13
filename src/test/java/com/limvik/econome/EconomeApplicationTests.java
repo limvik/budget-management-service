@@ -229,4 +229,33 @@ class EconomeApplicationTests {
 		}
 	}
 
+	@Test
+	@DisplayName("인증된 사용자의 예산 데이터 수정")
+	void shouldUpdateBudgetPlanIfValidUser() {
+		var headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.set("Authorization", "Bearer " + accessToken);
+
+		var newBudget = 20000L;
+		var requests = new ArrayList<BudgetPlanRequest>();
+		for (int i = 0; i < BudgetCategory.values().length; i++) {
+			requests.add(new BudgetPlanRequest(i + 1, newBudget));
+		}
+		var requestList = new BudgetPlanListRequest(requests);
+
+		String url = "/api/v1/budget-plans?year=%d&month=%d".formatted(budgetYear, budgetMonth);
+		HttpEntity<BudgetPlanListRequest> request = new HttpEntity<>(requestList, headers);
+		ResponseEntity<String> response = restTemplate.exchange(
+				url, HttpMethod.PATCH, request, String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		var budgetList = budgetPlanRepository.findAllByUserAndDate(user, LocalDate.of(budgetYear, budgetMonth, 1));
+		budgetList.forEach(budgetPlan -> {
+			assertThat(budgetList.size()).isEqualTo(BudgetCategory.values().length);
+			assertThat(budgetPlan.getAmount()).isEqualTo(newBudget);
+		});
+
+	}
+
 }
