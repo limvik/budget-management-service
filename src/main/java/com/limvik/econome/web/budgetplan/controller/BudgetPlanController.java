@@ -56,18 +56,6 @@ public class BudgetPlanController {
         return ResponseEntity.ok(mapBudgetPlanListToResponseList(budgetPlanList));
     }
 
-    private BudgetPlanListResponse mapBudgetPlanListToResponseList(List<BudgetPlan> budgetPlanList) {
-        List<BudgetPlanResponse> budgetPlanResponseList = new ArrayList<>();
-        for (BudgetPlan budgetPlan : budgetPlanList) {
-            BudgetPlanResponse budgetPlanResponse = new BudgetPlanResponse(
-                    budgetPlan.getCategory().getId(),
-                    budgetPlan.getCategory().getName().getCategory(),
-                    budgetPlan.getAmount());
-            budgetPlanResponseList.add(budgetPlanResponse);
-        }
-        return new BudgetPlanListResponse(budgetPlanResponseList);
-    }
-
     @PatchMapping
     public ResponseEntity<BudgetPlanListResponse> updateBudgetPlans(@Valid @RequestParam @Min(1) @Max(9999) int year,
                                                                     @Valid @RequestParam @Min(1) @Max(12) int month,
@@ -94,4 +82,23 @@ public class BudgetPlanController {
                         .build())
                 .toList();
     }
+
+    @GetMapping("/recommendations")
+    public ResponseEntity<BudgetPlanListResponse> getRecommendations(@Valid @RequestParam @Min(1) long amount) {
+        List<BudgetPlan> budgetPlanList = budgetPlanService.getBudgetRecommendations(amount);
+        return ResponseEntity.ok(mapBudgetPlanListToResponseList(budgetPlanList));
+    }
+
+    private BudgetPlanListResponse mapBudgetPlanListToResponseList(List<BudgetPlan> budgetPlanList) {
+        List<BudgetPlanResponse> budgetPlanResponseList = new ArrayList<>();
+        for (BudgetPlan budgetPlan : budgetPlanList) {
+            BudgetPlanResponse budgetPlanResponse = new BudgetPlanResponse(
+                    budgetPlan.getCategory().getId(),
+                    budgetPlan.getCategory().getName().getCategory(),
+                    budgetPlan.getAmount());
+            budgetPlanResponseList.add(budgetPlanResponse);
+        }
+        return new BudgetPlanListResponse(budgetPlanResponseList);
+    }
+
 }
