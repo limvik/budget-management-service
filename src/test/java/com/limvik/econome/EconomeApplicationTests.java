@@ -67,6 +67,7 @@ class EconomeApplicationTests {
 
 	@BeforeAll
 	void setup() {
+		// 기본 사용자 테스트 데이터
 		user = User.builder().id(1L)
 				.username("test")
 				.email("test@test.com")
@@ -79,6 +80,7 @@ class EconomeApplicationTests {
 		user.setRefreshToken(refreshToken);
 		userRepository.save(user);
 
+		// 기본 사용자 설정 예산
 		List<BudgetPlan> budgetPlans = new ArrayList<>();
 		for (long i = 1; i <= BudgetCategory.values().length; i++) {
 			budgetPlans.add(BudgetPlan.builder()
@@ -342,11 +344,11 @@ class EconomeApplicationTests {
 	@Test
 	@DisplayName("인증된 사용자의 정상적인 지출 기록 상세조회 요청")
 	void shouldGetExpenseIfValidUser() {
-		String datetime = "2023-12-31T09:30:00Z";
-		long categoryId = 1L;
-		long amount = 100000;
-		String memo = "memo";
-		boolean excluded = false;
+		var datetime = "2023-12-31T09:30:00Z";
+		var categoryId = 1L;
+		var amount = 100000;
+		var memo = "memo";
+		var excluded = false;
 		var expense = Expense.builder().datetime(Instant.parse(datetime))
 				.category(Category.builder().id(categoryId).build())
 				.amount(amount)
@@ -355,7 +357,6 @@ class EconomeApplicationTests {
 				.user(user)
 				.build();
 		expense = expenseRepository.save(expense);
-
 
 		var headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
@@ -417,6 +418,35 @@ class EconomeApplicationTests {
 		assertThat(updatedExpense.get().getMemo()).isEqualTo(updatedMemo);
 		assertThat(updatedExpense.get().isExcluded()).isEqualTo(updatedExcluded);
 
+	}
+
+	@Test
+	@DisplayName("인증된 사용자의 정상적인 지출기록 삭제 요청")
+	void shouldDeleteExpenseIfValidUser() {
+		var datetime = "2023-12-31T09:30:00Z";
+		var categoryId = 1L;
+		var amount = 100000L;
+		var memo = "memo";
+		var excluded = false;
+		var expense = Expense.builder().datetime(Instant.parse(datetime))
+				.category(Category.builder().id(categoryId).build())
+				.amount(amount)
+				.memo(memo)
+				.excluded(excluded)
+				.user(user)
+				.build();
+		expense = expenseRepository.save(expense);
+
+		var headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.set("Authorization", "Bearer " + accessToken);
+		String url = "/api/v1/expenses/" + expense.getId();
+		HttpEntity<String> request = new HttpEntity<>(null, headers);
+		ResponseEntity<String> response = restTemplate.exchange(
+				url, HttpMethod.DELETE, request, String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
+		assertThat(expenseRepository.findById(expense.getId()).isEmpty()).isTrue();
 	}
 
 }
