@@ -72,4 +72,12 @@ public class ExpenseController {
                 expense.isExcluded()
         );
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteExpense(@Valid @PathVariable(name = "id") @Min(1) long expenseId,
+                                                Authentication authentication) {
+        long userId = UserUtil.getUserIdFromJwt((JwtAuthenticationToken) authentication);
+        expenseService.deleteExpense(userId, expenseId);
+        return ResponseEntity.noContent().build();
+    }
 }

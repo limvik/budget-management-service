@@ -34,4 +34,12 @@ public class ExpenseService {
         return expenseRepository.findByUserAndId(user, expenseId).orElseThrow(
                 () -> new ErrorException(ErrorCode.NOT_EXIST_EXPENSE));
     }
+
+    @Transactional
+    public void deleteExpense(long userId, long expenseId) {
+        User user = User.builder().id(userId).build();
+        Expense expense = expenseRepository.findByUserAndId(user, expenseId).orElseThrow(
+                () -> new ErrorException(ErrorCode.NOT_EXIST_EXPENSE));
+        expenseRepository.delete(expense);
+    }
 }
