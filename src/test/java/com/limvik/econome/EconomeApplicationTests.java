@@ -63,7 +63,7 @@ class EconomeApplicationTests {
 		user = User.builder().id(1L)
 				.username("test")
 				.email("test@test.com")
-				.password("password")
+				.password("$2a$12$jxQoUurwE37F9VBEqtXEtuIfCeJ2aKvY6LkicQ5KFF5.9CZLFeNN6")
 				.minimumDailyExpense(10000)
 				.agreeAlarm(true)
 				.build();
@@ -256,6 +256,56 @@ class EconomeApplicationTests {
 			assertThat(budgetPlan.getAmount()).isEqualTo(newBudget);
 		});
 
+	}
+
+	@Test
+	@DisplayName("인증된 사용자의 예산 추천 요청")
+	void shouldReturnRecommendedBudgetPlansIfValidUser() {
+		for (long i = 2; i <= 5; i++) {
+			var user = User.builder().id(i)
+					.username("test" + i)
+					.email("test%d@test.com".formatted(i))
+					.password("$2a$12$jxQoUurwE37F9VBEqtXEtuIfCeJ2aKvY6LkicQ5KFF5.9CZLFeNN6")
+					.minimumDailyExpense(10000)
+					.agreeAlarm(true)
+					.build();
+			userRepository.save(user);
+		}
+
+		for (long i = 1; i <= 5; i++) {
+			List<BudgetPlan> budgetPlans = new ArrayList<>();
+			for (long j = 1; j <= BudgetCategory.values().length; j++) {
+				budgetPlans.add(BudgetPlan.builder()
+						.user(userRepository.findById(i).get())
+						.category(Category.builder().id(j).build())
+						.amount(j * 1000)
+						.date(LocalDate.of(budgetYear, budgetMonth, 1))
+						.build()
+				);
+			}
+			budgetPlanRepository.saveAll(budgetPlans);
+		}
+
+		var headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.set("Authorization", "Bearer " + accessToken);
+		String url = "/api/v1/budget-plans/recommendations?amount=%d".formatted(1000000);
+		HttpEntity<String> request = new HttpEntity<>(null, headers);
+		ResponseEntity<String> response = restTemplate.exchange(
+				url, HttpMethod.GET, request, String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		DocumentContext documentContext = JsonPath.parse(response.getBody());
+
+		for (int i = 1; i < BudgetCategory.values().length; i++) {
+			assertThat(documentContext.read("$.budgetPlans[%d].categoryId".formatted(i), Long.class))
+					.isEqualTo(i + 1);
+			assertThat(documentContext.read("$.budgetPlans[%d].categoryName".formatted(i), String.class))
+					.isEqualTo(BudgetCategory.values()[i].getCategory());
+			assertThat(documentContext.read("$.budgetPlans[%d].amount".formatted(i), Long.class))
+					.isGreaterThan(documentContext.read("$.budgetPlans[%d].amount".formatted(i-1), Long.class));
+		}
 	}
 
 }
