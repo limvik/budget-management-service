@@ -2,11 +2,13 @@ package com.limvik.econome;
 
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
+import com.limvik.econome.domain.budgetplan.entity.BudgetPlan;
 import com.limvik.econome.domain.category.entity.Category;
 import com.limvik.econome.domain.category.enums.BudgetCategory;
 import com.limvik.econome.domain.user.entity.User;
 import com.limvik.econome.global.config.JwtConfig;
 import com.limvik.econome.global.security.jwt.provider.JwtProvider;
+import com.limvik.econome.infrastructure.budgetplan.BudgetPlanRepository;
 import com.limvik.econome.infrastructure.category.CategoryRepository;
 import com.limvik.econome.infrastructure.user.UserRepository;
 import com.limvik.econome.web.budgetplan.dto.BudgetPlanListRequest;
@@ -19,6 +21,8 @@ import org.springframework.http.*;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.net.URI;
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -42,9 +46,17 @@ class EconomeApplicationTests {
 	CategoryRepository categoryRepository;
 
 	@Autowired
+	BudgetPlanRepository budgetPlanRepository;
+
+	@Autowired
 	TestRestTemplate restTemplate;
 
 	User user;
+	String accessToken;
+	String refreshToken;
+
+	int budgetYear = 2023;
+	int budgetMonth = 1;
 
 	@BeforeAll
 	void setup() {
@@ -55,9 +67,24 @@ class EconomeApplicationTests {
 				.minimumDailyExpense(10000)
 				.agreeAlarm(true)
 				.build();
-		String refreshToken = jwtProvider.generateRefreshToken(user);
+		accessToken = jwtProvider.generateAccessToken(user);
+		refreshToken = jwtProvider.generateRefreshToken(user);
 		user.setRefreshToken(refreshToken);
 		userRepository.save(user);
+
+		List<BudgetPlan> budgetPlans = new ArrayList<>();
+		for (long i = 1; i <= BudgetCategory.values().length; i++) {
+			budgetPlans.add(BudgetPlan.builder()
+					.user(user)
+					.category(Category.builder().id(i).build())
+					.amount(i * 1000)
+					.date(LocalDate.of(budgetYear, budgetMonth, 1))
+					.build()
+			);
+		}
+
+		budgetPlanRepository.saveAll(budgetPlans);
+
 	}
 
 	@Test
@@ -91,8 +118,6 @@ class EconomeApplicationTests {
 	@Test
 	@DisplayName("유효한 access token으로 엔드포인트 요청")
 	void shouldReturn200OkIfValidToken() {
-		var user = User.builder().id(1L).build();
-		String accessToken = jwtProvider.generateAccessToken(user);
 
 		var headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
@@ -108,13 +133,13 @@ class EconomeApplicationTests {
 	@Test
 	@DisplayName("유효하지 않은 access token으로 엔드포인트 요청")
 	void shouldReturn401UnauthorizedIfNotValidToken() {
-		String accessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9." +
+		String invalidAccessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9." +
 				"eyJpc3MiOiJsaW12aWtfZWNvbm9tZSIsImlhdCI6MTY5OTY3NDk5NSwiZXhwIjoxNjk5Njc1NTk1LCJzdWIiOiI4In0." +
 				"6uvQXPz8WwXcXoNYBylmS1QWvyfdnjRSbNOg_54aP5g3jWJu7OfVugfuGb14UVJU1umMMj5Nn2KMQn4ASTiYsg";
 
 		var headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
-		headers.set("Authorization", "Bearer " + accessToken);
+		headers.set("Authorization", "Bearer " + invalidAccessToken);
 
 		HttpEntity<String> request = new HttpEntity<>(null, headers);
 		ResponseEntity<String> response = restTemplate.exchange(
@@ -126,16 +151,6 @@ class EconomeApplicationTests {
 	@Test
 	@DisplayName("refresh token으로 access token 재발급")
 	void shouldReturnAccessTokenIfValidRefreshToken() {
-		var user = User.builder().id(1L)
-				.username("refresh")
-				.email("refresh@refresh.com")
-				.password("password")
-				.minimumDailyExpense(10000)
-				.agreeAlarm(true)
-				.build();
-		String refreshToken = jwtProvider.generateRefreshToken(user);
-		user.setRefreshToken(refreshToken);
-		userRepository.save(user);
 
 		var headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
@@ -168,21 +183,14 @@ class EconomeApplicationTests {
 	@Test
 	@DisplayName("인증된 사용자의 정상적인 예산 설정")
 	void shouldCreateBudgetPlanIfValidUser() {
-		var categoryId1 = 1L;
-		var categoryId2 = 2L;
-		var categoryId3 = 3L;
-		var amount1 = 1000L;
-		var amount2 = 2000L;
-		var amount3 = 3000L;
-		var request1 = new BudgetPlanRequest(categoryId1, amount1);
-		var request2 = new BudgetPlanRequest(categoryId2, amount2);
-		var request3 = new BudgetPlanRequest(categoryId3, amount3);
-		var requestList = new BudgetPlanListRequest(List.of(request1, request2, request3));
+		List<BudgetPlanRequest> requests = new ArrayList<>();
+		for (long i = 1; i <= BudgetCategory.values().length; i++) {
+			requests.add(new BudgetPlanRequest(i, 1000 * i));
+		}
+		var requestList = new BudgetPlanListRequest(requests);
 
 		var year = 2023;
 		var month = 11;
-
-		String accessToken = jwtProvider.generateAccessToken(user);
 
 		var headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
@@ -195,6 +203,30 @@ class EconomeApplicationTests {
 
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 		assertThat(response.getHeaders().getLocation()).isEqualTo(URI.create(url));
+	}
+
+	@Test
+	@DisplayName("인증된 사용자의 예산 데이터 조회")
+	void shouldGetBudgetPlansIfValidUser() {
+		var headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.set("Authorization", "Bearer " + accessToken);
+		String url = "/api/v1/budget-plans?year=%d&month=%d".formatted(budgetYear, budgetMonth);
+
+		HttpEntity<String> request = new HttpEntity<>(null, headers);
+		ResponseEntity<String> response = restTemplate.exchange(
+				url, HttpMethod.GET, request, String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+		DocumentContext documentContext = JsonPath.parse(response.getBody());
+		for (int i = 0; i < BudgetCategory.values().length; i++) {
+			assertThat(documentContext.read("$.budgetPlans[%d].categoryId".formatted(i), Long.class))
+					.isEqualTo(i + 1);
+			assertThat(documentContext.read("$.budgetPlans[%d].categoryName".formatted(i), String.class))
+					.isEqualTo(BudgetCategory.values()[i].getCategory());
+			assertThat(documentContext.read("$.budgetPlans[%d].amount".formatted(i), Long.class))
+					.isEqualTo((i + 1) * 1000L);
+		}
 	}
 
 }
