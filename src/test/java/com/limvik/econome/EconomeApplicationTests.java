@@ -376,4 +376,47 @@ class EconomeApplicationTests {
 
 	}
 
+	@Test
+	@DisplayName("인증된 사용자의 정상적인 지출기록 수정 요청")
+	void shouldUpdateExpenseIfValidUser() {
+		var datetime = "2023-12-31T09:30:00Z";
+		var categoryId = 1L;
+		var amount = 100000L;
+		var memo = "memo";
+		var excluded = false;
+		var expense = Expense.builder().datetime(Instant.parse(datetime))
+				.category(Category.builder().id(categoryId).build())
+				.amount(amount)
+				.memo(memo)
+				.excluded(excluded)
+				.user(user)
+				.build();
+		expense = expenseRepository.save(expense);
+
+		var updatedDatetime = "2023-12-31T13:30:00Z";
+		var updatedCategoryId = 2L;
+		var updatedAmount = 200000L;
+		var updatedMemo = "updated memo";
+		boolean updatedExcluded = true;
+		var updateExpenseRequest = new ExpenseRequest(
+				Instant.parse(updatedDatetime), updatedCategoryId, updatedAmount, updatedMemo, updatedExcluded);
+
+		var headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.set("Authorization", "Bearer " + accessToken);
+		String url = "/api/v1/expenses/" + expense.getId();
+		HttpEntity<ExpenseRequest> request = new HttpEntity<>(updateExpenseRequest, headers);
+		ResponseEntity<String> response = restTemplate.exchange(
+				url, HttpMethod.PATCH, request, String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+		var updatedExpense = expenseRepository.findById(expense.getId());
+		assertThat(updatedExpense.get().getDatetime()).isEqualTo(Instant.parse(updatedDatetime));
+		assertThat(updatedExpense.get().getAmount()).isEqualTo(updatedAmount);
+		assertThat(updatedExpense.get().getMemo()).isEqualTo(updatedMemo);
+		assertThat(updatedExpense.get().isExcluded()).isEqualTo(updatedExcluded);
+
+	}
+
 }
