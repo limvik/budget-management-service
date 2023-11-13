@@ -9,4 +9,6 @@ import java.util.Optional;
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
     Optional<Expense> findByUserAndId(User user, long id);
+
+    boolean existsByUserAndId(User user, long id);
 }
