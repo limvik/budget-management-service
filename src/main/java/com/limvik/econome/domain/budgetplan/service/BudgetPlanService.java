@@ -28,7 +28,8 @@ public class BudgetPlanService {
     }
 
     private boolean isNotExistPlan(BudgetPlan budgetPlan) {
-        return !budgetPlanRepository.existsByDateAndCategory(budgetPlan.getDate(), budgetPlan.getCategory());
+        return !budgetPlanRepository.existsByUserAndDateAndCategory(
+                budgetPlan.getUser(), budgetPlan.getDate(), budgetPlan.getCategory());
     }
 
     @Transactional

@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface BudgetPlanRepository extends JpaRepository<BudgetPlan, Long> {
 
-    boolean existsByDateAndCategory(LocalDate date, Category category);
+    boolean existsByUserAndDateAndCategory(User user, LocalDate date, Category category);
 
     List<BudgetPlan> findAllByUserAndDate(User user, LocalDate date);
 
