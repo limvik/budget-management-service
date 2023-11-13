@@ -25,8 +25,8 @@ public class UserSignupRepositoryTest {
     @DisplayName("중복되지 않은 username과 email 테스트")
     public void shouldReturnFalseIfUsernameOrEmailNotExists() {
 
-        boolean isDuplicatedEmail = userRepository.existsByEmail("test@test.com");
-        boolean isDuplicatedUsername = userRepository.existsByUsername("test");
+        boolean isDuplicatedEmail = userRepository.existsByEmail("test999@test.com");
+        boolean isDuplicatedUsername = userRepository.existsByUsername("test999");
 
         assertThat(isDuplicatedEmail).isFalse();
         assertThat(isDuplicatedUsername).isFalse();
@@ -37,8 +37,8 @@ public class UserSignupRepositoryTest {
     @DisplayName("중복된 username과 email 테스트")
     public void shouldReturnTrueIfUsernameOrEmailNotExists() {
 
-        String username = "test";
-        String email = "test@test.com";
+        String username = "test999";
+        String email = "test999@test.com";
         String encodedPassword = "$2a$12$dNSsw8M8NoAghJ6KJKzQM.fc8p9ysnufwYGhqjbasIWfjqt6axLMW";
         long minimumDailyExpense = 10000;
         boolean agreeAlarm = true;
@@ -51,8 +51,8 @@ public class UserSignupRepositoryTest {
 
         userRepository.save(user);
 
-        boolean isDuplicatedEmail = userRepository.existsByEmail("test@test.com");
-        boolean isDuplicatedUsername = userRepository.existsByUsername("test");
+        boolean isDuplicatedEmail = userRepository.existsByEmail("test999@test.com");
+        boolean isDuplicatedUsername = userRepository.existsByUsername("test999");
 
         assertThat(isDuplicatedEmail).isTrue();
         assertThat(isDuplicatedUsername).isTrue();

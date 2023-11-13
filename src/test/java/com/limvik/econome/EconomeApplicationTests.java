@@ -19,6 +19,7 @@ import org.springframework.http.*;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -45,6 +46,8 @@ class EconomeApplicationTests {
 	TestRestTemplate restTemplate;
 
 	User user;
+	String accessToken;
+	String refreshToken;
 
 	@BeforeAll
 	void setup() {
@@ -55,7 +58,8 @@ class EconomeApplicationTests {
 				.minimumDailyExpense(10000)
 				.agreeAlarm(true)
 				.build();
-		String refreshToken = jwtProvider.generateRefreshToken(user);
+		accessToken = jwtProvider.generateAccessToken(user);
+		refreshToken = jwtProvider.generateRefreshToken(user);
 		user.setRefreshToken(refreshToken);
 		userRepository.save(user);
 	}
@@ -91,8 +95,6 @@ class EconomeApplicationTests {
 	@Test
 	@DisplayName("유효한 access token으로 엔드포인트 요청")
 	void shouldReturn200OkIfValidToken() {
-		var user = User.builder().id(1L).build();
-		String accessToken = jwtProvider.generateAccessToken(user);
 
 		var headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
@@ -108,13 +110,13 @@ class EconomeApplicationTests {
 	@Test
 	@DisplayName("유효하지 않은 access token으로 엔드포인트 요청")
 	void shouldReturn401UnauthorizedIfNotValidToken() {
-		String accessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9." +
+		String invalidAccessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9." +
 				"eyJpc3MiOiJsaW12aWtfZWNvbm9tZSIsImlhdCI6MTY5OTY3NDk5NSwiZXhwIjoxNjk5Njc1NTk1LCJzdWIiOiI4In0." +
 				"6uvQXPz8WwXcXoNYBylmS1QWvyfdnjRSbNOg_54aP5g3jWJu7OfVugfuGb14UVJU1umMMj5Nn2KMQn4ASTiYsg";
 
 		var headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
-		headers.set("Authorization", "Bearer " + accessToken);
+		headers.set("Authorization", "Bearer " + invalidAccessToken);
 
 		HttpEntity<String> request = new HttpEntity<>(null, headers);
 		ResponseEntity<String> response = restTemplate.exchange(
@@ -126,16 +128,6 @@ class EconomeApplicationTests {
 	@Test
 	@DisplayName("refresh token으로 access token 재발급")
 	void shouldReturnAccessTokenIfValidRefreshToken() {
-		var user = User.builder().id(1L)
-				.username("refresh")
-				.email("refresh@refresh.com")
-				.password("password")
-				.minimumDailyExpense(10000)
-				.agreeAlarm(true)
-				.build();
-		String refreshToken = jwtProvider.generateRefreshToken(user);
-		user.setRefreshToken(refreshToken);
-		userRepository.save(user);
 
 		var headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
@@ -168,21 +160,14 @@ class EconomeApplicationTests {
 	@Test
 	@DisplayName("인증된 사용자의 정상적인 예산 설정")
 	void shouldCreateBudgetPlanIfValidUser() {
-		var categoryId1 = 1L;
-		var categoryId2 = 2L;
-		var categoryId3 = 3L;
-		var amount1 = 1000L;
-		var amount2 = 2000L;
-		var amount3 = 3000L;
-		var request1 = new BudgetPlanRequest(categoryId1, amount1);
-		var request2 = new BudgetPlanRequest(categoryId2, amount2);
-		var request3 = new BudgetPlanRequest(categoryId3, amount3);
-		var requestList = new BudgetPlanListRequest(List.of(request1, request2, request3));
+		List<BudgetPlanRequest> requests = new ArrayList<>();
+		for (long i = 1; i <= BudgetCategory.values().length; i++) {
+			requests.add(new BudgetPlanRequest(i, 1000 * i));
+		}
+		var requestList = new BudgetPlanListRequest(requests);
 
 		var year = 2023;
 		var month = 11;
-
-		String accessToken = jwtProvider.generateAccessToken(user);
 
 		var headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
