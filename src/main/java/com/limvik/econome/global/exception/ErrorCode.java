@@ -13,7 +13,8 @@ public enum ErrorCode {
     UNPROCESSABLE_USERINFO(HttpStatus.UNPROCESSABLE_ENTITY, "입력된 정보가 형식에 맞지 않습니다."),
     NOT_EXIST_USER(HttpStatus.UNAUTHORIZED, "일치하는 사용자 정보가 없습니다."),
     INVALID_TOKEN(HttpStatus.UNAUTHORIZED, "토큰이 유효하지 않습니다."),
-    DUPLICATED_BUDGET_PLAN(HttpStatus.CONFLICT, "이미 예산이 설정되었습니다. 원하신다면 수정을 요청해주세요.");
+    DUPLICATED_BUDGET_PLAN(HttpStatus.CONFLICT, "이미 예산이 설정되었습니다. 원하신다면 수정을 요청해주세요."),
+    NOT_EXIST_BUDGET_PLAN(HttpStatus.NOT_FOUND, "존재하지 않는 예산 계획입니다.");
 
     private final HttpStatus httpStatus;
     private final String message;

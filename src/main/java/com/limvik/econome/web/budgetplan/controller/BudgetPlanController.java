@@ -34,9 +34,8 @@ public class BudgetPlanController {
                                                  @Valid @RequestParam @Min(1) @Max(12) int month,
                                                  @Valid @RequestBody BudgetPlanListRequest budgetPlans,
                                                  Authentication authentication) {
-        var token = (JwtAuthenticationToken) authentication;
+        long userId = getUserIdFromAuthentication(authentication);
         var date = LocalDate.of(year, month, 1);
-        long userId = UserUtil.getUserIdFromJwt(token);
         List<BudgetPlan> budgetPlanList = mapRequestToBudgetPlanList(budgetPlans, userId, date);
 
         budgetPlanList = budgetPlanService.createBudgetPlans(budgetPlanList);
@@ -47,23 +46,11 @@ public class BudgetPlanController {
         return ResponseEntity.created(URI.create(location)).build();
     }
 
-    private List<BudgetPlan> mapRequestToBudgetPlanList(BudgetPlanListRequest budgetPlans, long userId, LocalDate date) {
-        return budgetPlans.budgetPlans().stream()
-                .map(budgetPlanRequest -> BudgetPlan.builder()
-                        .date(date)
-                        .user(User.builder().id(userId).build())
-                        .category(Category.builder().id(budgetPlanRequest.categoryId()).build())
-                        .amount(budgetPlanRequest.amount())
-                        .build())
-                .toList();
-    }
-
     @GetMapping
     public ResponseEntity<BudgetPlanListResponse> getBudgetPlans(@Valid @RequestParam @Min(1) @Max(9999) int year,
                                                                  @Valid @RequestParam @Min(1) @Max(12) int month,
                                                                  Authentication authentication) {
-        var token = (JwtAuthenticationToken) authentication;
-        long userId = UserUtil.getUserIdFromJwt(token);
+        long userId = getUserIdFromAuthentication(authentication);
         var date = LocalDate.of(year, month, 1);
         List<BudgetPlan> budgetPlanList = budgetPlanService.getBudgetPlans(userId, date);
         return ResponseEntity.ok(mapBudgetPlanListToResponseList(budgetPlanList));
@@ -79,5 +66,32 @@ public class BudgetPlanController {
             budgetPlanResponseList.add(budgetPlanResponse);
         }
         return new BudgetPlanListResponse(budgetPlanResponseList);
+    }
+
+    @PatchMapping
+    public ResponseEntity<BudgetPlanListResponse> updateBudgetPlans(@Valid @RequestParam @Min(1) @Max(9999) int year,
+                                                                    @Valid @RequestParam @Min(1) @Max(12) int month,
+                                                                    @Valid @RequestBody BudgetPlanListRequest budgetPlans,
+                                                                    Authentication authentication) {
+        long userId = getUserIdFromAuthentication(authentication);
+        var date = LocalDate.of(year, month, 1);
+        budgetPlanService.updateBudgetPlans(mapRequestToBudgetPlanList(budgetPlans, userId, date));
+        return ResponseEntity.ok().build();
+    }
+
+    private long getUserIdFromAuthentication(Authentication authentication) {
+        var token = (JwtAuthenticationToken) authentication;
+        return UserUtil.getUserIdFromJwt(token);
+    }
+
+    private List<BudgetPlan> mapRequestToBudgetPlanList(BudgetPlanListRequest budgetPlans, long userId, LocalDate date) {
+        return budgetPlans.budgetPlans().stream()
+                .map(budgetPlanRequest -> BudgetPlan.builder()
+                        .date(date)
+                        .user(User.builder().id(userId).build())
+                        .category(Category.builder().id(budgetPlanRequest.categoryId()).build())
+                        .amount(budgetPlanRequest.amount())
+                        .build())
+                .toList();
     }
 }

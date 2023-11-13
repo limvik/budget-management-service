@@ -27,6 +27,21 @@ public class BudgetPlanService {
         }
     }
 
+    @Transactional
+    public void updateBudgetPlans(List<BudgetPlan> budgetPlans) {
+        budgetPlans.forEach(budgetPlan ->{
+            if (isNotExistPlan(budgetPlan))  {
+                throw new ErrorException(ErrorCode.NOT_EXIST_BUDGET_PLAN);
+            } else {
+                budgetPlanRepository.updateAmountByUserAndDateAndCategory(
+                        budgetPlan.getUser().getId(),
+                        budgetPlan.getCategory().getId(),
+                        budgetPlan.getDate(),
+                        budgetPlan.getAmount());
+            }
+        });
+    }
+
     private boolean isNotExistPlan(BudgetPlan budgetPlan) {
         return !budgetPlanRepository.existsByUserAndDateAndCategory(
                 budgetPlan.getUser(), budgetPlan.getDate(), budgetPlan.getCategory());
