@@ -13,6 +13,7 @@ import com.limvik.econome.infrastructure.category.CategoryRepository;
 import com.limvik.econome.infrastructure.user.UserRepository;
 import com.limvik.econome.web.budgetplan.dto.BudgetPlanListRequest;
 import com.limvik.econome.web.budgetplan.dto.BudgetPlanRequest;
+import com.limvik.econome.web.expense.dto.ExpenseRequest;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,6 +22,7 @@ import org.springframework.http.*;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.net.URI;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -306,6 +308,30 @@ class EconomeApplicationTests {
 			assertThat(documentContext.read("$.budgetPlans[%d].amount".formatted(i), Long.class))
 					.isGreaterThan(documentContext.read("$.budgetPlans[%d].amount".formatted(i-1), Long.class));
 		}
+	}
+
+	@Test
+	@DisplayName("인증된 사용자의 정상적인 지출 기록 생성 요청")
+	void shouldCreateExpenseIfValidUser() {
+		var headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.set("Authorization", "Bearer " + accessToken);
+
+		String datetime = "2023-12-31T09:30:00Z";
+		long categoryId = 1L;
+		long amount = 100000;
+		String memo = "memo";
+		boolean excluded = false;
+
+		var request = new ExpenseRequest(Instant.parse(datetime), categoryId, amount, memo, excluded);
+
+		String url = "/api/v1/expenses";
+		HttpEntity<ExpenseRequest> entity = new HttpEntity<>(request, headers);
+		ResponseEntity<String> response = restTemplate.exchange(
+				url, HttpMethod.POST, entity, String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+		assertThat(response.getHeaders().getLocation()).isEqualTo(URI.create(url + "/1"));
 	}
 
 }

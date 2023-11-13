@@ -2,6 +2,7 @@ package com.limvik.econome.domain.category.entity;
 
 import com.limvik.econome.domain.budgetplan.entity.BudgetPlan;
 import com.limvik.econome.domain.category.enums.BudgetCategory;
+import com.limvik.econome.domain.expense.entity.Expense;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -28,4 +29,7 @@ public class Category {
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
     private List<BudgetPlan> budgetPlans;
+
+    @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
+    private List<Expense> expenses;
 }

@@ -1,6 +1,7 @@
 package com.limvik.econome.domain.user.entity;
 
 import com.limvik.econome.domain.budgetplan.entity.BudgetPlan;
+import com.limvik.econome.domain.expense.entity.Expense;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -45,5 +46,8 @@ public class User {
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<BudgetPlan> budgetPlans;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Expense> expenses;
 
 }
