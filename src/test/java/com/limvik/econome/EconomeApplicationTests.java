@@ -5,11 +5,13 @@ import com.jayway.jsonpath.JsonPath;
 import com.limvik.econome.domain.budgetplan.entity.BudgetPlan;
 import com.limvik.econome.domain.category.entity.Category;
 import com.limvik.econome.domain.category.enums.BudgetCategory;
+import com.limvik.econome.domain.expense.entity.Expense;
 import com.limvik.econome.domain.user.entity.User;
 import com.limvik.econome.global.config.JwtConfig;
 import com.limvik.econome.global.security.jwt.provider.JwtProvider;
 import com.limvik.econome.infrastructure.budgetplan.BudgetPlanRepository;
 import com.limvik.econome.infrastructure.category.CategoryRepository;
+import com.limvik.econome.infrastructure.expense.ExpenseRepository;
 import com.limvik.econome.infrastructure.user.UserRepository;
 import com.limvik.econome.web.budgetplan.dto.BudgetPlanListRequest;
 import com.limvik.econome.web.budgetplan.dto.BudgetPlanRequest;
@@ -49,6 +51,9 @@ class EconomeApplicationTests {
 
 	@Autowired
 	BudgetPlanRepository budgetPlanRepository;
+
+	@Autowired
+	ExpenseRepository expenseRepository;
 
 	@Autowired
 	TestRestTemplate restTemplate;
@@ -331,7 +336,44 @@ class EconomeApplicationTests {
 				url, HttpMethod.POST, entity, String.class);
 
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
-		assertThat(response.getHeaders().getLocation()).isEqualTo(URI.create(url + "/1"));
+		assertThat(response.getHeaders().getLocation()).isEqualTo(URI.create(url + "/" + expenseRepository.count()));
+	}
+
+	@Test
+	@DisplayName("인증된 사용자의 정상적인 지출 기록 상세조회 요청")
+	void shouldGetExpenseIfValidUser() {
+		String datetime = "2023-12-31T09:30:00Z";
+		long categoryId = 1L;
+		long amount = 100000;
+		String memo = "memo";
+		boolean excluded = false;
+		var expense = Expense.builder().datetime(Instant.parse(datetime))
+				.category(Category.builder().id(categoryId).build())
+				.amount(amount)
+				.memo(memo)
+				.excluded(excluded)
+				.user(user)
+				.build();
+		expense = expenseRepository.save(expense);
+
+
+		var headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.set("Authorization", "Bearer " + accessToken);
+		String url = "/api/v1/expenses/" + expense.getId();
+		HttpEntity<String> request = new HttpEntity<>(null, headers);
+		ResponseEntity<String> response = restTemplate.exchange(
+				url, HttpMethod.GET, request, String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+		DocumentContext documentContext = JsonPath.parse(response.getBody());
+		assertThat(documentContext.read("$.datetime", String.class)).isEqualTo(datetime);
+		assertThat(documentContext.read("$.categoryId", Long.class)).isEqualTo(categoryId);
+		assertThat(documentContext.read("$.amount", Long.class)).isEqualTo(amount);
+		assertThat(documentContext.read("$.memo", String.class)).isEqualTo(memo);
+		assertThat(documentContext.read("$.excluded", Boolean.class)).isEqualTo(excluded);
+		assertThat(documentContext.read("$.id", Long.class)).isEqualTo(expense.getId());
+
 	}
 
 }
