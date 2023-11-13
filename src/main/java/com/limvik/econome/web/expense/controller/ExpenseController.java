@@ -28,17 +28,28 @@ public class ExpenseController {
     public ResponseEntity<String> createExpense(@Valid @RequestBody ExpenseRequest expenseRequest,
                                                 Authentication authentication) {
         long userId = UserUtil.getUserIdFromJwt((JwtAuthenticationToken) authentication);
-        Expense createdExpense = expenseService.createExpense(mapRequestToEntity(expenseRequest, userId));
+        Expense createdExpense = expenseService.createExpense(mapRequestToEntity(expenseRequest, userId, null));
         return ResponseEntity.created(URI.create("/api/v1/expenses/" + createdExpense.getId())).build();
     }
 
-    private Expense mapRequestToEntity(ExpenseRequest expenseRequest, long userId) {
+    @PatchMapping("/{id}")
+    public ResponseEntity<Expense> updateExpense(@Valid @PathVariable(name = "id") @Min(1) Long expenseId,
+                                                @Valid @RequestBody ExpenseRequest expenseRequest,
+                                                Authentication authentication) {
+        long userId = UserUtil.getUserIdFromJwt((JwtAuthenticationToken) authentication);
+        expenseService.updateExpense(mapRequestToEntity(expenseRequest, userId, expenseId));
+        return ResponseEntity.ok().build();
+    }
+
+    private Expense mapRequestToEntity(ExpenseRequest expenseRequest, Long userId, Long expenseId) {
         return Expense.builder()
+                .id(expenseId)
                 .user(User.builder().id(userId).build())
                 .category(Category.builder().id(expenseRequest.categoryId()).build())
                 .amount(expenseRequest.amount())
                 .memo(expenseRequest.memo())
                 .datetime(expenseRequest.datetime())
+                .excluded(expenseRequest.excluded())
                 .build();
     }
 

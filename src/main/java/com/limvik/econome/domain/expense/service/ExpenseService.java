@@ -20,6 +20,14 @@ public class ExpenseService {
         return expenseRepository.save(expense);
     }
 
+    @Transactional
+    public Expense updateExpense(Expense expense) {
+        if (expenseRepository.existsByUserAndId(expense.getUser(), expense.getId()))
+            return expenseRepository.save(expense);
+        else
+            throw new ErrorException(ErrorCode.NOT_EXIST_EXPENSE);
+    }
+
     @Transactional(readOnly = true)
     public Expense getExpense(long userId, long expenseId) {
         var user = User.builder().id(userId).build();
