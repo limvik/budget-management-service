@@ -449,4 +449,53 @@ class EconomeApplicationTests {
 		assertThat(expenseRepository.findById(expense.getId()).isEmpty()).isTrue();
 	}
 
+	@Test
+	@DisplayName("인증된 사용자의 정상적인 지출기록 리스트 조회 요청")
+	void shouldGetExpenseListIfValidUser() {
+		List<Expense> expenses = new ArrayList<>();
+		for (long i = 1; i <= BudgetCategory.values().length; i++) {
+			var datetime = "2023-12-%dT09:%d:00Z".formatted(i+10, i+20);
+			var categoryId = i % 2L + 1;
+			var amount = 10000L * i;
+			var memo = "memo" + i;
+			var excluded = i == 2;
+			var expense = Expense.builder().datetime(Instant.parse(datetime))
+					.category(Category.builder().id(categoryId).build())
+					.amount(amount)
+					.memo(memo)
+					.excluded(excluded)
+					.user(user)
+					.build();
+			expenses.add(expense);
+		}
+		expenseRepository.saveAll(expenses);
+
+		var headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.set("Authorization", "Bearer " + accessToken);
+		String url = "/api/v1/expenses?startDate=%s&endDate=%s&categoryId=%d&minAmount=%d&maxAmount=%d"
+				.formatted("2023-12-11", "2023-12-16", 1, 0, 60000);
+		HttpEntity<String> request = new HttpEntity<>(null, headers);
+		ResponseEntity<String> response = restTemplate.exchange(
+				url, HttpMethod.GET, request, String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+		DocumentContext documentContext = JsonPath.parse(response.getBody());
+
+		for (int i = 0; i < 3; i++) {
+			assertThat(documentContext.read("$.expenses[%d].datetime".formatted(i), String.class))
+					.isEqualTo("2023-12-%dT09:%d:00Z".formatted((i+1)*2+10, (i+1)*2+20));
+			assertThat(documentContext.read("$.expenses[%d].categoryId".formatted(i), Long.class))
+					.isEqualTo(1L);
+			assertThat(documentContext.read("$.expenses[%d].categoryName".formatted(i), String.class))
+					.isEqualTo(BudgetCategory.values()[0].getCategory());
+			assertThat(documentContext.read("$.expenses[%d].amount".formatted(i), Long.class))
+					.isEqualTo((i+1)*2 * 10000L);
+			assertThat(documentContext.read("$.expenses[%d].excluded".formatted(i), Boolean.class))
+					.isEqualTo(i == 0);
+		}
+		assertThat(documentContext.read("$.totalAmount", Long.class)).isEqualTo(190000L);
+		assertThat(documentContext.read("$.totalAmountForCategory", Long.class)).isEqualTo(100000L);
+	}
+
 }
