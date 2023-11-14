@@ -9,6 +9,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
+
 @RequiredArgsConstructor
 @Service
 public class ExpenseService {
@@ -33,6 +37,15 @@ public class ExpenseService {
         var user = User.builder().id(userId).build();
         return expenseRepository.findByUserAndId(user, expenseId).orElseThrow(
                 () -> new ErrorException(ErrorCode.NOT_EXIST_EXPENSE));
+    }
+
+    @Transactional(readOnly = true)
+    public List<Expense> getExpenses(long userId, LocalDate startDate, LocalDate endDate, Long minAmount, Long maxAmount) {
+        if (maxAmount <= 0) maxAmount = Long.MAX_VALUE;
+        String startInstant = startDate.toString() + "T00:00:00Z";
+        String postfixForEndInstant = endDate.toString() + "T23:59:59Z";
+        return expenseRepository.findAllExpenseList(userId,
+                Instant.parse(startInstant), Instant.parse(postfixForEndInstant), minAmount, maxAmount);
     }
 
     @Transactional

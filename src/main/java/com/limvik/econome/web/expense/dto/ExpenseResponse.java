@@ -1,13 +1,19 @@
 package com.limvik.econome.web.expense.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.io.Serializable;
 import java.time.Instant;
 
 public record ExpenseResponse(
-        long id,
+        Long id,
         Instant datetime,
-        long categoryId,
-        long amount,
+        @JsonInclude(JsonInclude.Include.NON_EMPTY)
+        Long categoryId,
+        @JsonInclude(JsonInclude.Include.NON_EMPTY)
+        String categoryName,
+        Long amount,
+        @JsonInclude(JsonInclude.Include.NON_EMPTY)
         String memo,
-        boolean excluded
+        Boolean excluded
 ) implements Serializable { }
