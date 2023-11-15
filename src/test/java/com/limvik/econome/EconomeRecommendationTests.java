@@ -56,6 +56,12 @@ public class EconomeRecommendationTests {
     String accessToken;
     String refreshToken;
 
+    long monthlyBudgetPerCategory;
+    int countCreatedBudget;
+    int countCreatedExpense;
+    int dayOfMonth;
+    long dailyExpensePerCategory;
+
     @BeforeAll
     void setup() {
         // 기본 사용자 테스트 데이터
@@ -71,21 +77,9 @@ public class EconomeRecommendationTests {
         user.setRefreshToken(refreshToken);
         userRepository.save(user);
 
-    }
-
-    @AfterAll
-    void tearDown() {
-        budgetPlanRepository.deleteAllInBatch();
-        expenseRepository.deleteAllInBatch();
-    }
-
-    @Test
-    @DisplayName("인증된 사용자의 오늘의 추천 지출 금액 조회 요청 - 예산 내 지출")
-    void shouldGetRecommendedExpenseAmountIfValidUser() {
-
         // 예산 데이터 생성 - 예산이 없는 카테고리의 반환 여부 테스트를 위해 절반의 카테고리만 예산 설정
-        long monthlyBudgetPerCategory = 500000L;
-        int countCreatedBudget = 6;
+        monthlyBudgetPerCategory = 500000L;
+        countCreatedBudget = 6;
         for (long categoryId = 1; categoryId <= countCreatedBudget; categoryId++) {
             BudgetPlan budgetPlan = BudgetPlan.builder()
                     .user(user)
@@ -97,9 +91,9 @@ public class EconomeRecommendationTests {
         }
 
         // 지출 데이터 생성 - 예산이 없는 카테고리의 지출도 반영되도록 예산 없는 카테고리 지출 기록 추가
-        int dayOfMonth = LocalDate.now().getDayOfMonth();
-        long dailyExpensePerCategory = 10000L;
-        int countCreatedExpense = countCreatedBudget + 1;
+        dayOfMonth = LocalDate.now().getDayOfMonth();
+        dailyExpensePerCategory = 10000L;
+        countCreatedExpense = countCreatedBudget + 1;
         var excluded = false;
         for (int days = 1; days < dayOfMonth; days++) {
             var datetime = Instant.now().minusSeconds(Duration.ofDays(days).toSeconds());
@@ -114,6 +108,18 @@ public class EconomeRecommendationTests {
                 expenseRepository.save(expense);
             }
         }
+
+    }
+
+    @AfterAll
+    void tearDown() {
+        budgetPlanRepository.deleteAllInBatch();
+        expenseRepository.deleteAllInBatch();
+    }
+
+    @Test
+    @DisplayName("인증된 사용자의 오늘의 추천 지출 금액 조회 요청 - 예산 내 지출")
+    void shouldGetRecommendedExpenseAmountIfValidUser() {
 
         var headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -154,5 +160,61 @@ public class EconomeRecommendationTests {
                     .isEqualTo(recommendedTodayTotalAmount / countCreatedBudget);
         }
 
+    }
+
+    @Test
+    @DisplayName("인증된 사용자의 오늘의 지출 금액 조회 요청")
+    void shouldGetExpenseAmountIfValidUser() {
+
+        // 오늘 지출 기록 추가
+        var excluded = false;
+        var datetime = Instant.now();
+        for (long categoryId = 1L; categoryId <= countCreatedExpense; categoryId++) {
+            var expense = Expense.builder().datetime(datetime)
+                    .category(Category.builder().id(categoryId).build())
+                    .amount(dailyExpensePerCategory)
+                    .memo(null)
+                    .excluded(excluded)
+                    .user(user)
+                    .build();
+            expenseRepository.save(expense);
+        }
+
+        var headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", "Bearer " + accessToken);
+        String url = "/api/v1/expenses/today";
+        HttpEntity<String> request = new HttpEntity<>(null, headers);
+        ResponseEntity<String> response = restTemplate.exchange(
+                url, HttpMethod.GET, request, String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        DocumentContext documentContext = JsonPath.parse(response.getBody());
+
+        long spentTotalAmount = dailyExpensePerCategory * countCreatedExpense;
+        assertThat(documentContext.read("$.spentTotalAmount", Long.class))
+                .isEqualTo(spentTotalAmount);
+
+        int lengthOfMonth = LocalDate.now().lengthOfMonth();
+        int restDaysOfMonthFromToday = lengthOfMonth - dayOfMonth + 1;
+        long expenseAmount = dailyExpensePerCategory * (dayOfMonth - 1) * countCreatedExpense;
+        long recommendedTodayTotalAmount = (monthlyBudgetPerCategory * countCreatedBudget - expenseAmount) / restDaysOfMonthFromToday / 1000 * 1000;
+        long recommendedPerCategory = recommendedTodayTotalAmount / countCreatedBudget;
+
+        for (int i = 0; i < countCreatedExpense; i++) {
+            assertThat(documentContext.read("$.details[%d].categoryId".formatted(i), Long.class))
+                    .isEqualTo(i+1L);
+            assertThat(documentContext.read("$.details[%d].categoryName".formatted(i), String.class))
+                    .isEqualTo(BudgetCategory.values()[i].getCategory());
+            assertThat(documentContext.read("$.details[%d].recommendedAmount".formatted(i), Long.class))
+                    .isEqualTo(i == countCreatedExpense - 1 ? 0 : recommendedPerCategory);
+            assertThat(documentContext.read("$.details[%d].spentAmount".formatted(i), Long.class))
+                    .isEqualTo(dailyExpensePerCategory);
+
+            String risk = i == countCreatedExpense - 1 ? "0%" : (long)((double)dailyExpensePerCategory / recommendedPerCategory * 100) + "%";
+            assertThat(documentContext.read("$.details[%d].risk".formatted(i), String.class))
+                    .isEqualTo(risk);
+        }
     }
 }

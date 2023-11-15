@@ -23,8 +23,19 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
             "FROM Expense e " +
             "WHERE e.user.id = ?1 AND " +
             "FUNCTION('YEAR', e.datetime) = FUNCTION('YEAR', CURRENT_DATE) AND " +
-            "FUNCTION('MONTH', e.datetime) = FUNCTION('MONTH', CURRENT_DATE) " +
+            "FUNCTION('MONTH', e.datetime) = FUNCTION('MONTH', CURRENT_DATE) AND " +
+            "FUNCTION('DAY', e.datetime) < FUNCTION('DAY', CURRENT_DATE) " +
             "GROUP BY e.category.id " +
             "ORDER BY categoryId DESC")
     List<Map<String, Long>> findThisMonthExpensesPerCategory(long userId);
+
+    @Query("SELECT e.category.id as categoryId, sum(e.amount) as amount " +
+            "FROM Expense e " +
+            "WHERE e.user.id = ?1 AND " +
+            "FUNCTION('YEAR', e.datetime) = FUNCTION('YEAR', CURRENT_DATE) AND " +
+            "FUNCTION('MONTH', e.datetime) = FUNCTION('MONTH', CURRENT_DATE) " +
+            "AND FUNCTION('DAY', e.datetime) = FUNCTION('DAY', CURRENT_DATE) " +
+            "GROUP BY e.category.id " +
+            "ORDER BY categoryId DESC")
+    List<Map<String, Long>> findTodayExpensesPerCategory(long userId);
 }
