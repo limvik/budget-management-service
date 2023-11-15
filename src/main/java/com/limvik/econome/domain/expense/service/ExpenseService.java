@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
@@ -81,8 +82,9 @@ public class ExpenseService {
         long expenseForNotCreatedBudgetPlan = getExpenseForNotCreatedBudgetPlan(monthlyBudgetMap, monthlyExpensesMap);
         long penaltyForUnexpectedExpensePerCategory = expenseForNotCreatedBudgetPlan / monthlyBudget.size();
         monthlyBudgetMap.forEach((categoryId, budget) -> {
+            long monthlyExpensePerCategory = monthlyExpensesMap.getOrDefault(categoryId, 0L);
             long todayRecommendationAmount = 
-                    (budget - monthlyExpenses.get((int) (categoryId - 1)).get("amount") - penaltyForUnexpectedExpensePerCategory) / restDaysOfMonth / 1000 * 1000;
+                    (budget - monthlyExpensePerCategory - penaltyForUnexpectedExpensePerCategory) / restDaysOfMonth / 1000 * 1000;
             monthlyBudgetMap.put(categoryId, Math.max(todayRecommendationAmount, minimumDailyExpense));
         });
         return monthlyBudgetMap;
@@ -101,5 +103,10 @@ public class ExpenseService {
                 sum.addAndGet(monthlyExpenses.get(categoryId));
         });
         return sum.get();
+    }
+
+    public Map<Long, Long> getTodayExpenses(long userId) {
+        return expenseRepository.findTodayExpensesPerCategory(userId).stream()
+                .collect(Collectors.toMap(map -> map.get("categoryId"), map -> map.get("amount")));
     }
 }

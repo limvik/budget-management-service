@@ -186,4 +186,41 @@ public class ExpenseController {
                 "1일 이네요! 이번달도 새로운 마음으로 체계적인 지출 도전!"
                 : "오늘도 합리적인 소비 생활 화이팅!";
     }
+
+    @GetMapping("/today")
+    public ResponseEntity<TodayExpenseListResponse> getTodayExpenses(Authentication authentication) {
+        long userId = UserUtil.getUserIdFromJwt((JwtAuthenticationToken) authentication);
+        Map<Long, Long> todayExpenseAmountPerCategory = expenseService.getTodayExpenses(userId);
+        Map<Long, Long> recommendedTodayExpenseAmountPerCategory = expenseService.getTodayRecommendationExpenses(userId);
+        return ResponseEntity.ok(mapEntityToTodayExpenseResponseList(
+                todayExpenseAmountPerCategory,
+                recommendedTodayExpenseAmountPerCategory));
+    }
+
+    private TodayExpenseListResponse mapEntityToTodayExpenseResponseList(
+            Map<Long, Long> todayExpenseAmountPerCategory,
+            Map<Long, Long> recommendedTodayExpenseAmountPerCategory){
+
+        List<TodayExpenseResponse> details = new ArrayList<>();
+        todayExpenseAmountPerCategory.forEach((categoryId, spentAmount) -> {
+            long recommendedAmount = recommendedTodayExpenseAmountPerCategory.containsKey(categoryId) ?
+                    recommendedTodayExpenseAmountPerCategory.get(categoryId) : 0;
+            String risk = getRisk(recommendedAmount, spentAmount);
+            details.add(new TodayExpenseResponse(
+                        categoryId,
+                        BudgetCategory.values()[categoryId.intValue() - 1].getCategory(),
+                        recommendedAmount,
+                        spentAmount,
+                        risk));
+        });
+        return new TodayExpenseListResponse(
+                todayExpenseAmountPerCategory.values().stream().reduce(0L, Long::sum),
+                details);
+    }
+
+    private String getRisk(long recommendedAmount, long spentAmount) {
+        if (recommendedAmount == 0) return "0%";
+        return (long)((double)spentAmount / recommendedAmount * 100) + "%";
+    }
+
 }
