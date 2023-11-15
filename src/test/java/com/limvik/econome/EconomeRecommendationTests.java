@@ -95,10 +95,10 @@ public class EconomeRecommendationTests {
         dailyExpensePerCategory = 10000L;
         countCreatedExpense = countCreatedBudget + 1;
         var excluded = false;
-        for (int days = 1; days < dayOfMonth; days++) {
-            var datetime = Instant.now().minusSeconds(Duration.ofDays(days).toSeconds());
+        for (int days = 0; days < dayOfMonth; days++) {
+            var date = LocalDate.now().minusDays(days);
             for (long categoryId = 1L; categoryId <= countCreatedExpense; categoryId++) {
-                var expense = Expense.builder().datetime(datetime)
+                var expense = Expense.builder().datetime(Instant.parse(date + "T00:00:00Z"))
                         .category(Category.builder().id(categoryId).build())
                         .amount(dailyExpensePerCategory)
                         .memo(null)
@@ -166,20 +166,6 @@ public class EconomeRecommendationTests {
     @DisplayName("인증된 사용자의 오늘의 지출 금액 조회 요청")
     void shouldGetExpenseAmountIfValidUser() {
 
-        // 오늘 지출 기록 추가
-        var excluded = false;
-        var datetime = Instant.now();
-        for (long categoryId = 1L; categoryId <= countCreatedExpense; categoryId++) {
-            var expense = Expense.builder().datetime(datetime)
-                    .category(Category.builder().id(categoryId).build())
-                    .amount(dailyExpensePerCategory)
-                    .memo(null)
-                    .excluded(excluded)
-                    .user(user)
-                    .build();
-            expenseRepository.save(expense);
-        }
-
         var headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("Authorization", "Bearer " + accessToken);
@@ -215,6 +201,106 @@ public class EconomeRecommendationTests {
             String risk = i == countCreatedExpense - 1 ? "0%" : (long)((double)dailyExpensePerCategory / recommendedPerCategory * 100) + "%";
             assertThat(documentContext.read("$.details[%d].risk".formatted(i), String.class))
                     .isEqualTo(risk);
+        }
+    }
+
+    @Test
+    @DisplayName("인증된 사용자의 월간/주간/상대적 지출 통계정보 조회 요청")
+    void shouldGetStatisticsIfValidUser() {
+        addOtherUserData();
+        addLastMonthData();
+
+        accessToken = jwtProvider.generateAccessToken(user);
+
+        var headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("Authorization", "Bearer " + accessToken);
+        String url = "/api/v1/expenses/stat";
+        HttpEntity<String> request = new HttpEntity<>(null, headers);
+        ResponseEntity<String> response = restTemplate.exchange(
+                url, HttpMethod.GET, request, String.class);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        DocumentContext documentContext = JsonPath.parse(response.getBody());
+
+        assertThat(documentContext.read("$.againstLastMonth.totalExpenseRate", String.class))
+                .isEqualTo("100%");
+        assertThat(documentContext.read("$.againstLastDayOfWeek.totalExpenseRate", String.class))
+                .isEqualTo("100%");
+        for (int i = 0; i < countCreatedExpense; i++) {
+            assertThat(documentContext.read("$.againstLastMonth.details[%d].categoryId".formatted(i), Long.class))
+                    .isEqualTo(i+1L);
+            assertThat(documentContext.read("$.againstLastMonth.details[%d].categoryName".formatted(i), String.class))
+                    .isEqualTo(BudgetCategory.values()[i].getCategory());
+            assertThat(documentContext.read("$.againstLastMonth.details[%d].expenseRate".formatted(i), String.class))
+                    .isEqualTo("100%");
+
+            assertThat(documentContext.read("$.againstLastDayOfWeek.details[%d].categoryId".formatted(i), Long.class))
+                    .isEqualTo(i+1L);
+            assertThat(documentContext.read("$.againstLastDayOfWeek.details[%d].categoryName".formatted(i), String.class))
+                    .isEqualTo(BudgetCategory.values()[i].getCategory());
+            assertThat(documentContext.read("$.againstLastDayOfWeek.details[%d].expenseRate".formatted(i), String.class))
+                    .isEqualTo("100%");
+        }
+        assertThat(documentContext.read("$.againstOtherUsers.relativeExpenseRate", String.class))
+                .isEqualTo("100%");
+    }
+
+    private void addOtherUserData() {
+        // 상대적 지출 통계를 위한 사용자 추가
+        var user2 = User.builder().id(2L)
+                .username("test2")
+                .email("test2@test.com")
+                .password("$2a$12$jxQoUurwE37F9VBEqtXEtuIfCeJ2aKvY6LkicQ5KFF5.9CZLFeNN6")
+                .minimumDailyExpense(10000)
+                .agreeAlarm(true)
+                .build();
+        user2.setRefreshToken(jwtProvider.generateRefreshToken(user2));
+        userRepository.save(user2);
+
+        // 상대적 지출 통계를 위한 다른 유저 이번달 예산 추가
+        for (long categoryId = 1; categoryId <= countCreatedBudget; categoryId++) {
+            BudgetPlan budgetPlan = BudgetPlan.builder()
+                    .user(user2)
+                    .date(LocalDate.of(LocalDate.now().getYear(), LocalDate.now().getMonth(), 1))
+                    .amount(monthlyBudgetPerCategory)
+                    .category(Category.builder().id(categoryId).build())
+                    .build();
+            budgetPlanRepository.save(budgetPlan);
+        }
+
+        // 상대적 지출 통계를 위한 다른 유저 이번달 지출 기록 추가
+        for (int days = 0; days < dayOfMonth; days++) {
+            var datetime = Instant.now().minusSeconds(Duration.ofDays(days).toSeconds());
+            for (long categoryId = 1L; categoryId <= countCreatedExpense; categoryId++) {
+                var expense = Expense.builder().datetime(datetime)
+                        .category(Category.builder().id(categoryId).build())
+                        .amount(dailyExpensePerCategory)
+                        .memo(null)
+                        .excluded(false)
+                        .user(user2)
+                        .build();
+                expenseRepository.save(expense);
+            }
+        }
+    }
+
+    private void addLastMonthData() {
+        int lastDaysOfMonth = LocalDate.now().minusMonths(1).lengthOfMonth();
+        // 지난 달 지출 기록 추가
+        for (int days = dayOfMonth; days < dayOfMonth + lastDaysOfMonth; days++) {
+            var datetime = Instant.now().minusSeconds(Duration.ofDays(days).toSeconds());
+            for (long categoryId = 1L; categoryId <= countCreatedExpense; categoryId++) {
+                var expense = Expense.builder().datetime(datetime)
+                        .category(Category.builder().id(categoryId).build())
+                        .amount(dailyExpensePerCategory)
+                        .memo(null)
+                        .excluded(false)
+                        .user(user)
+                        .build();
+                expenseRepository.save(expense);
+            }
         }
     }
 }
