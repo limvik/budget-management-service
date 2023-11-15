@@ -96,6 +96,12 @@ class EconomeApplicationTests {
 
 	}
 
+	@AfterAll
+	void tearDown() {
+		budgetPlanRepository.deleteAllInBatch();
+		expenseRepository.deleteAllInBatch();
+	}
+
 	@Test
 	void contextLoads() {
 	}
@@ -336,7 +342,6 @@ class EconomeApplicationTests {
 		HttpEntity<ExpenseRequest> entity = new HttpEntity<>(request, headers);
 		ResponseEntity<String> response = restTemplate.exchange(
 				url, HttpMethod.POST, entity, String.class);
-
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 		assertThat(response.getHeaders().getLocation()).isEqualTo(URI.create(url + "/" + expenseRepository.count()));
 	}
