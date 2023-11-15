@@ -143,8 +143,10 @@ public class EconomeRecommendationTests {
         // 오늘의 추천 총 지출 확인
         int lengthOfMonth = LocalDate.now().lengthOfMonth();
         int restDaysOfMonthFromToday = lengthOfMonth - dayOfMonth + 1;
-        long expenseAmount = dailyExpensePerCategory * (dayOfMonth - 1) * countCreatedExpense;
-        long recommendedTodayTotalAmount = (monthlyBudgetPerCategory * countCreatedBudget - expenseAmount) / restDaysOfMonthFromToday / 1000 * 1000;
+        long expenseAmountPerCategory = dailyExpensePerCategory * (dayOfMonth - 1);
+        long penaltyAmountPerCategory = dailyExpensePerCategory * (dayOfMonth - 1) / countCreatedBudget;
+        long RecommendedTodayTotalAmountPerCategory = (monthlyBudgetPerCategory - expenseAmountPerCategory - penaltyAmountPerCategory) / restDaysOfMonthFromToday;
+        long recommendedTodayTotalAmount = (RecommendedTodayTotalAmountPerCategory * countCreatedBudget) / 1000 * 1000;
         assertThat(documentContext.read("$.recommendedTodayTotalAmount", Long.class))
                 .isEqualTo(recommendedTodayTotalAmount);
 
