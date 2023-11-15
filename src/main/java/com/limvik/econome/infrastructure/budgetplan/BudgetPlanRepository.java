@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 public interface BudgetPlanRepository extends JpaRepository<BudgetPlan, Long> {
 
@@ -33,5 +34,13 @@ public interface BudgetPlanRepository extends JpaRepository<BudgetPlan, Long> {
             "FROM BudgetPlan bp " +
             "GROUP BY bp.category.id, bp.category.name")
     List<BudgetPlan> findRecommendedBudgetPlans(long amount);
+
+    @Query("SELECT new map(bp.category.id as categoryId, sum(bp.amount) as amount) " +
+            "FROM BudgetPlan bp " +
+            "WHERE bp.user.id = ?1 AND " +
+            "FUNCTION('YEAR', bp.date) = FUNCTION('YEAR', CURRENT_DATE) AND " +
+            "FUNCTION('MONTH', bp.date) = FUNCTION('MONTH', CURRENT_DATE) " +
+            "GROUP BY bp.category.id")
+    List<Map<String, Long>> findThisMonthBudgetPerCategory(long userId);
 
 }
