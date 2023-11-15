@@ -1,6 +1,9 @@
 package com.limvik.econome.domain.expense.service;
 
+import com.limvik.econome.domain.category.enums.BudgetCategory;
 import com.limvik.econome.domain.expense.entity.Expense;
+import com.limvik.econome.domain.expense.entity.ExpenseProjection;
+import com.limvik.econome.domain.expense.service.dto.CalendarStatDto;
 import com.limvik.econome.domain.user.entity.User;
 import com.limvik.econome.global.exception.ErrorCode;
 import com.limvik.econome.global.exception.ErrorException;
@@ -13,9 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
@@ -108,5 +109,47 @@ public class ExpenseService {
     public Map<Long, Long> getTodayExpenses(long userId) {
         return expenseRepository.findTodayExpensesPerCategory(userId).stream()
                 .collect(Collectors.toMap(map -> map.get("categoryId"), map -> map.get("amount")));
+    }
+
+    public List<CalendarStatDto> getExpenseMonthlyStat(long userId) {
+        List<ExpenseProjection.SumCategory> lastMonthExpenses =
+                expenseRepository.findMonthlyExpensesPerCategoryByYearAndMonthAndDayBefore(
+                        userId, LocalDate.now().minusMonths(1));
+        List<ExpenseProjection.SumCategory> thisMonthExpenses =
+                expenseRepository.findMonthlyExpensesPerCategoryByYearAndMonthAndDayBefore(
+                        userId, LocalDate.now());
+        return getCalendarStatDtos(lastMonthExpenses, thisMonthExpenses);
+    }
+
+    public List<CalendarStatDto> getExpenseWeeklyStat(long userId) {
+        List<ExpenseProjection.SumCategory> lastWeekSameDayExpenses =
+                expenseRepository.findWeeklyExpensesPerCategoryByYearAndMonthAndDay(
+                        userId, LocalDate.now().minusWeeks(1));
+        List<ExpenseProjection.SumCategory> todayExpenses =
+                expenseRepository.findWeeklyExpensesPerCategoryByYearAndMonthAndDay(
+                        userId, LocalDate.now());
+        return getCalendarStatDtos(lastWeekSameDayExpenses, todayExpenses);
+    }
+
+    private List<CalendarStatDto> getCalendarStatDtos(List<ExpenseProjection.SumCategory> lastExpenses,
+                                                      List<ExpenseProjection.SumCategory> thisExpenses) {
+        List<CalendarStatDto> result = new ArrayList<>();
+        lastExpenses.forEach(lastExpense -> {
+            AtomicLong thisExpense = new AtomicLong(0L);
+            thisExpenses.stream()
+                    .filter(sumCategory -> sumCategory.getCategoryId().equals(lastExpense.getCategoryId()))
+                    .findFirst().ifPresent(sumCategory -> thisExpense.set(sumCategory.getAmount()));
+            double expenseRate = (double) thisExpense.get() / lastExpense.getAmount() * 100;
+            CalendarStatDto dto = new CalendarStatDto(
+                    lastExpense.getCategoryId(),
+                    BudgetCategory.values()[lastExpense.getCategoryId().intValue() - 1].getCategory(),
+                    expenseRate);
+            result.add(dto);
+        });
+        return result;
+    }
+
+    public Double getExpenseRateCompareOtherUserStat(long userId) {
+        return expenseRepository.findExpenseRateCompareOtherUser(userId);
     }
 }
