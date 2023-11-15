@@ -166,15 +166,15 @@ public class ExpenseController {
 
     private RecommendationExpenseListResponse mapEntityListToRecommendationResponseList(
             Map<Long, Long> recommendedTodayExpenseAmountPerCategory) {
-        long recommendedTodayTotalAmount = recommendedTodayExpenseAmountPerCategory.values()
-                .stream().reduce(0L, Long::sum);
+
         String message = getRecommendExpenseMessage();
         List<RecommendationExpenseResponse> recommendationExpenseResponse = new ArrayList<>();
         recommendedTodayExpenseAmountPerCategory.forEach((categoryId, amount) -> recommendationExpenseResponse.add(
                 new RecommendationExpenseResponse(categoryId,
                         BudgetCategory.values()[categoryId.intValue() - 1].getCategory(),
                         amount)));
-
+        long recommendedTodayTotalAmount = Math.round(recommendedTodayExpenseAmountPerCategory.values()
+                .stream().reduce(0L, Long::sum)) / 1000 * 1000;
         return new RecommendationExpenseListResponse(
                 recommendedTodayTotalAmount,
                 message,
@@ -210,7 +210,7 @@ public class ExpenseController {
             details.add(new TodayExpenseResponse(
                         categoryId,
                         BudgetCategory.values()[categoryId.intValue() - 1].getCategory(),
-                        recommendedAmount,
+                        recommendedAmount / 1000 * 1000,
                         spentAmount,
                         risk));
         });
@@ -221,7 +221,7 @@ public class ExpenseController {
 
     private String getRisk(long recommendedAmount, long spentAmount) {
         if (recommendedAmount == 0) return "0%";
-        return (long)((double)spentAmount / recommendedAmount * 100) + "%";
+        return Math.round((double)spentAmount / recommendedAmount * 100) + "%";
     }
 
     @GetMapping("/stat")

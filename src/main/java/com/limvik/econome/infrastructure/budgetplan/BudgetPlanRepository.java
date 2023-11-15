@@ -38,9 +38,9 @@ public interface BudgetPlanRepository extends JpaRepository<BudgetPlan, Long> {
     @Query("SELECT new map(bp.category.id as categoryId, sum(bp.amount) as amount) " +
             "FROM BudgetPlan bp " +
             "WHERE bp.user.id = ?1 AND " +
-            "FUNCTION('YEAR', bp.date) = FUNCTION('YEAR', CURRENT_DATE) AND " +
-            "FUNCTION('MONTH', bp.date) = FUNCTION('MONTH', CURRENT_DATE) " +
+            "FUNCTION('YEAR', bp.date) = FUNCTION('YEAR', ?2) AND " +
+            "FUNCTION('MONTH', bp.date) = FUNCTION('MONTH', ?2) " +
             "GROUP BY bp.category.id")
-    List<Map<String, Long>> findThisMonthBudgetPerCategory(long userId);
+    List<Map<String, Long>> findThisMonthBudgetPerCategory(long userId, LocalDate date);
 
 }

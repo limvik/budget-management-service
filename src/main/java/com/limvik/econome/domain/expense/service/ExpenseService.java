@@ -14,8 +14,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -54,7 +55,9 @@ public class ExpenseService {
         String startInstant = startDate.toString() + "T00:00:00Z";
         String postfixForEndInstant = endDate.toString() + "T23:59:59Z";
         return expenseRepository.findAllExpenseList(userId,
-                Instant.parse(startInstant), Instant.parse(postfixForEndInstant), minAmount, maxAmount);
+                LocalDateTime.parse(startInstant, DateTimeFormatter.ISO_DATE_TIME),
+                LocalDateTime.parse(postfixForEndInstant, DateTimeFormatter.ISO_DATE_TIME),
+                minAmount, maxAmount);
     }
 
     @Transactional
@@ -68,12 +71,12 @@ public class ExpenseService {
     @Transactional(readOnly = true)
     public Map<Long, Long> getTodayRecommendationExpenses(long userId) {
         // 사용자 지정 월 예산 불러오기
-        List<Map<String, Long>> monthlyBudget = budgetPlanRepository.findThisMonthBudgetPerCategory(userId);
+        List<Map<String, Long>> monthlyBudget = budgetPlanRepository.findThisMonthBudgetPerCategory(userId, LocalDate.now());
         Map<Long, Long> monthlyBudgetMap = new HashMap<>();
         monthlyBudget.forEach(map -> monthlyBudgetMap.put(map.get("categoryId"), map.get("amount")));
 
         // 사용자 이번달 카테고리별 지출 합계 불러오기
-        List<Map<String, Long>> monthlyExpenses = expenseRepository.findThisMonthExpensesPerCategory(userId);
+        List<Map<String, Long>> monthlyExpenses = expenseRepository.findThisMonthExpensesPerCategory(userId, LocalDate.now());
         Map<Long, Long> monthlyExpensesMap = new HashMap<>();
         monthlyExpenses.forEach(map -> monthlyExpensesMap.put(map.get("categoryId"), map.get("amount")));
 
@@ -85,7 +88,7 @@ public class ExpenseService {
         monthlyBudgetMap.forEach((categoryId, budget) -> {
             long monthlyExpensePerCategory = monthlyExpensesMap.getOrDefault(categoryId, 0L);
             long todayRecommendationAmount = 
-                    (budget - monthlyExpensePerCategory - penaltyForUnexpectedExpensePerCategory) / restDaysOfMonth / 1000 * 1000;
+                    (budget - monthlyExpensePerCategory - penaltyForUnexpectedExpensePerCategory) / restDaysOfMonth;
             monthlyBudgetMap.put(categoryId, Math.max(todayRecommendationAmount, minimumDailyExpense));
         });
         return monthlyBudgetMap;

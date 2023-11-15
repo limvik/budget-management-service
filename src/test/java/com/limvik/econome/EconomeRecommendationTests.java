@@ -20,9 +20,8 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.*;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -96,9 +95,9 @@ public class EconomeRecommendationTests {
         countCreatedExpense = countCreatedBudget + 1;
         var excluded = false;
         for (int days = 0; days < dayOfMonth; days++) {
-            var date = LocalDate.now().minusDays(days);
+            var datetime = LocalDateTime.now().minusDays(days);
             for (long categoryId = 1L; categoryId <= countCreatedExpense; categoryId++) {
-                var expense = Expense.builder().datetime(Instant.parse(date + "T00:00:00Z"))
+                var expense = Expense.builder().datetime(datetime)
                         .category(Category.builder().id(categoryId).build())
                         .amount(dailyExpensePerCategory)
                         .memo(null)
@@ -157,7 +156,7 @@ public class EconomeRecommendationTests {
             assertThat(documentContext.read("$.recommendations[%d].categoryName".formatted(i), String.class))
                     .isEqualTo(BudgetCategory.values()[i].getCategory());
             assertThat(documentContext.read("$.recommendations[%d].amount".formatted(i), Long.class))
-                    .isEqualTo(recommendedTodayTotalAmount / countCreatedBudget);
+                    .isEqualTo(RecommendedTodayTotalAmountPerCategory);
         }
 
     }
@@ -194,11 +193,11 @@ public class EconomeRecommendationTests {
             assertThat(documentContext.read("$.details[%d].categoryName".formatted(i), String.class))
                     .isEqualTo(BudgetCategory.values()[i].getCategory());
             assertThat(documentContext.read("$.details[%d].recommendedAmount".formatted(i), Long.class))
-                    .isEqualTo(i == countCreatedExpense - 1 ? 0 : recommendedPerCategory);
+                    .isEqualTo(i == countCreatedExpense - 1 ? 0 : recommendedPerCategory / 1000 * 1000);
             assertThat(documentContext.read("$.details[%d].spentAmount".formatted(i), Long.class))
                     .isEqualTo(dailyExpensePerCategory);
 
-            String risk = i == countCreatedExpense - 1 ? "0%" : (long)((double)dailyExpensePerCategory / recommendedPerCategory * 100) + "%";
+            String risk = i == countCreatedExpense - 1 ? "0%" : Math.round((double)dailyExpensePerCategory / recommendedPerCategory * 100) + "%";
             assertThat(documentContext.read("$.details[%d].risk".formatted(i), String.class))
                     .isEqualTo(risk);
         }
@@ -272,7 +271,7 @@ public class EconomeRecommendationTests {
 
         // 상대적 지출 통계를 위한 다른 유저 이번달 지출 기록 추가
         for (int days = 0; days < dayOfMonth; days++) {
-            var datetime = Instant.now().minusSeconds(Duration.ofDays(days).toSeconds());
+            var datetime = LocalDateTime.now().minusDays(days);
             for (long categoryId = 1L; categoryId <= countCreatedExpense; categoryId++) {
                 var expense = Expense.builder().datetime(datetime)
                         .category(Category.builder().id(categoryId).build())
@@ -290,7 +289,7 @@ public class EconomeRecommendationTests {
         int lastDaysOfMonth = LocalDate.now().minusMonths(1).lengthOfMonth();
         // 지난 달 지출 기록 추가
         for (int days = dayOfMonth; days < dayOfMonth + lastDaysOfMonth; days++) {
-            var datetime = Instant.now().minusSeconds(Duration.ofDays(days).toSeconds());
+            var datetime = LocalDateTime.now().minusDays(days);
             for (long categoryId = 1L; categoryId <= countCreatedExpense; categoryId++) {
                 var expense = Expense.builder().datetime(datetime)
                         .category(Category.builder().id(categoryId).build())
