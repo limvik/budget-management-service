@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
@@ -17,4 +18,13 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
     @Query("SELECT e FROM Expense e WHERE e.user.id = ?1 AND e.datetime BETWEEN ?2 AND ?3 AND e.amount BETWEEN ?4 AND ?5")
     List<Expense> findAllExpenseList(long userId, Instant startDate, Instant endDate, long minAmount, long maxAmount);
+
+    @Query("SELECT e.category.id as categoryId, sum(e.amount) as amount " +
+            "FROM Expense e " +
+            "WHERE e.user.id = ?1 AND " +
+            "FUNCTION('YEAR', e.datetime) = FUNCTION('YEAR', CURRENT_DATE) AND " +
+            "FUNCTION('MONTH', e.datetime) = FUNCTION('MONTH', CURRENT_DATE) " +
+            "GROUP BY e.category.id " +
+            "ORDER BY categoryId DESC")
+    List<Map<String, Long>> findThisMonthExpensesPerCategory(long userId);
 }

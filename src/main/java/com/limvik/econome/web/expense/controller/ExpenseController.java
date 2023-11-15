@@ -1,13 +1,12 @@
 package com.limvik.econome.web.expense.controller;
 
 import com.limvik.econome.domain.category.entity.Category;
+import com.limvik.econome.domain.category.enums.BudgetCategory;
 import com.limvik.econome.domain.expense.entity.Expense;
 import com.limvik.econome.domain.expense.service.ExpenseService;
 import com.limvik.econome.domain.user.entity.User;
 import com.limvik.econome.global.security.authentication.JwtAuthenticationToken;
-import com.limvik.econome.web.expense.dto.ExpenseListResponse;
-import com.limvik.econome.web.expense.dto.ExpenseRequest;
-import com.limvik.econome.web.expense.dto.ExpenseResponse;
+import com.limvik.econome.web.expense.dto.*;
 import com.limvik.econome.web.util.UserUtil;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -18,7 +17,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 @RequiredArgsConstructor
@@ -153,5 +154,36 @@ public class ExpenseController {
         long userId = UserUtil.getUserIdFromJwt((JwtAuthenticationToken) authentication);
         expenseService.deleteExpense(userId, expenseId);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/recommendations")
+    public ResponseEntity<RecommendationExpenseListResponse> getTodayRecommendationExpenses(Authentication authentication) {
+        long userId = UserUtil.getUserIdFromJwt((JwtAuthenticationToken) authentication);
+        Map<Long, Long> recommendedTodayExpenseAmountPerCategory = expenseService.getTodayRecommendationExpenses(userId);
+        return ResponseEntity.ok(mapEntityListToRecommendationResponseList(recommendedTodayExpenseAmountPerCategory));
+    }
+
+    private RecommendationExpenseListResponse mapEntityListToRecommendationResponseList(
+            Map<Long, Long> recommendedTodayExpenseAmountPerCategory) {
+        long recommendedTodayTotalAmount = recommendedTodayExpenseAmountPerCategory.values()
+                .stream().reduce(0L, Long::sum);
+        String message = getRecommendExpenseMessage();
+        List<RecommendationExpenseResponse> recommendationExpenseResponse = new ArrayList<>();
+        recommendedTodayExpenseAmountPerCategory.forEach((categoryId, amount) -> recommendationExpenseResponse.add(
+                new RecommendationExpenseResponse(categoryId,
+                        BudgetCategory.values()[categoryId.intValue() - 1].getCategory(),
+                        amount)));
+
+        return new RecommendationExpenseListResponse(
+                recommendedTodayTotalAmount,
+                message,
+                recommendationExpenseResponse
+        );
+    }
+
+    private String getRecommendExpenseMessage() {
+        return LocalDate.now().getDayOfMonth() == 1 ?
+                "1일 이네요! 이번달도 새로운 마음으로 체계적인 지출 도전!"
+                : "오늘도 합리적인 소비 생활 화이팅!";
     }
 }
