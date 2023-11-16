@@ -254,10 +254,10 @@ public class ExpenseController {
     private List<ExpenseStatCalendarCategoryResponse> mapCalendarStatDtoToExpenseStatCategoryResponse(
             List<CalendarStatDto> calendarStatDtos){
         List<ExpenseStatCalendarCategoryResponse> againstLast = new ArrayList<>();
-        calendarStatDtos.forEach(monthlyStatDto -> {
-            String expenseRate = monthlyStatDto.expenseRate().longValue() + "%";
+        calendarStatDtos.forEach(statDto -> {
+            String expenseRate = statDto.expenseRate().longValue() + "%";
             againstLast.add(new ExpenseStatCalendarCategoryResponse(
-                    monthlyStatDto.categoryId(), monthlyStatDto.categoryName(), expenseRate));
+                    statDto.categoryId(), statDto.categoryName(), expenseRate));
         });
         return againstLast;
     }
