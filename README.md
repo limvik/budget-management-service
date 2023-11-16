@@ -1,6 +1,8 @@
 # EconoMe
 
-![image](https://github.com/limvik/budget-management-service/assets/37972432/26624259-f239-477f-b230-79b227c2b081)
+<p align="center">
+  <img width="640" height="320" src="https://github.com/limvik/budget-management-service/assets/37972432/26624259-f239-477f-b230-79b227c2b081">
+</p>
 
 ## 개인 예산 관리 REST API
 
@@ -34,24 +36,26 @@
 ## Skills
 
 ![java](https://img.shields.io/badge/Java%2017-white?logo=openjdk&logoColor=black)<!-- 커피 아이콘은 Oracle에서 삭제 요청 https://github.com/simple-icons/simple-icons/issues/7374 -->
-![Static Badge](https://img.shields.io/badge/Gradle-02303A?logo=gradle&logoColor=white)
+![gradle](https://img.shields.io/badge/Gradle-02303A?logo=gradle&logoColor=white)
 
-![Static Badge](https://img.shields.io/badge/SpringBoot%203-6DB33F?logo=springboot&logoColor=white)
-![Static Badge](https://img.shields.io/badge/SpringSecurity%206-6DB33F?logo=springsecurity&logoColor=white)
+![spring boot](https://img.shields.io/badge/SpringBoot%203-6DB33F?logo=springboot&logoColor=white)
+![spring security](https://img.shields.io/badge/SpringSecurity%206-6DB33F?logo=springsecurity&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-black?logo=JSON%20web%20tokens&logoColor=white)
 
-![Static Badge](https://img.shields.io/badge/Spring%20Data%20JPA%20-6DB33F?logo=jpa&logoColor=white)
-![Static Badge](https://img.shields.io/badge/MySql%208-4479A1?logo=mysql&logoColor=white)
+![spring data jpa](https://img.shields.io/badge/Spring%20Data%20JPA%20-6DB33F?logo=jpa&logoColor=white)
+![mysql](https://img.shields.io/badge/MySql%208-4479A1?logo=mysql&logoColor=white)
 
-![Static Badge](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
-![Static Badge](https://img.shields.io/badge/Testcontainer-16d6c7?logo=linuxcontainers&logoColor=white)
+![docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
+![testcontainer](https://img.shields.io/badge/Testcontainer-16d6c7?logo=linuxcontainers&logoColor=white)
 
-![Static Badge](https://img.shields.io/badge/Postman-FF6C37?logo=postman&logoColor=white)
-![Static Badge](https://img.shields.io/badge/IntelliJ%20Idea-000000?logo=intellijidea&logoColor=white)
+![postman](https://img.shields.io/badge/Postman-FF6C37?logo=postman&logoColor=white)
+![intellij-idea](https://img.shields.io/badge/IntelliJ%20Idea-000000?logo=intellijidea&logoColor=white)
 
 ## ERD
 
-![erd](https://github.com/limvik/budget-management-service/assets/37972432/6bda665f-4787-4e15-a788-500d3fbd0690)
+<p align="center">
+  <img width="598" height="480" src="https://github.com/limvik/budget-management-service/assets/37972432/6bda665f-4787-4e15-a788-500d3fbd0690">
+</p>
 
 - 카테고리(categories)는 예산 계획(budget_plans), 지출(expenses)과 1:M 관계가 있으므로, 관리를 위해 별도의 테이블을 추가하였습니다.
 - 사용자(users) 테이블에서 설정 항목(minimum_daily_expenses, agree_alarm)과 refresh_token은 속성 상 다른 테이블에서 관리하는게 맞다고 판단되지만, 시간 제약이 있어 개발 속도 향상을 위해 통합하였습니다.
@@ -218,7 +222,7 @@ testImplementation 'org.apache.httpcomponents:httpclient:4.5.14'
 
 시간이 부족한 상황에서 평소 시간까지 표현하기 위해서 주로 사용하던 `Instant` 자료형을 사용하였습니다. DTO의 자료형이나 과거 테스트 데이터 생성 시 시간 조작 편의를 위해 `LocalDate`나 `LocalDateTime` 을 사용하였습니다.
 
-데이터를 날짜를 기준으로 불러올 때, 데이터베이스에서 일부 연도와 월 데이터만 가지고 불러올 때 예상했던 데이터를 가져오지 못하거나 더 가져오는 문제가 발생하였습니다.
+데이터의 `날짜`를 기준으로 데이터베이스에서 불러올 때 예상했던 데이터를 가져오지 못하거나 더 가져오는 문제가 발생하였습니다.
 
 #### 원인
 
