@@ -4,6 +4,7 @@ import com.limvik.econome.domain.category.entity.Category;
 import com.limvik.econome.domain.category.enums.BudgetCategory;
 import com.limvik.econome.domain.expense.entity.Expense;
 import com.limvik.econome.domain.expense.service.ExpenseService;
+import com.limvik.econome.domain.expense.service.dto.CalendarStatDto;
 import com.limvik.econome.domain.user.entity.User;
 import com.limvik.econome.global.security.authentication.JwtAuthenticationToken;
 import com.limvik.econome.web.expense.dto.*;
@@ -165,15 +166,15 @@ public class ExpenseController {
 
     private RecommendationExpenseListResponse mapEntityListToRecommendationResponseList(
             Map<Long, Long> recommendedTodayExpenseAmountPerCategory) {
-        long recommendedTodayTotalAmount = recommendedTodayExpenseAmountPerCategory.values()
-                .stream().reduce(0L, Long::sum);
+
         String message = getRecommendExpenseMessage();
         List<RecommendationExpenseResponse> recommendationExpenseResponse = new ArrayList<>();
         recommendedTodayExpenseAmountPerCategory.forEach((categoryId, amount) -> recommendationExpenseResponse.add(
                 new RecommendationExpenseResponse(categoryId,
                         BudgetCategory.values()[categoryId.intValue() - 1].getCategory(),
                         amount)));
-
+        long recommendedTodayTotalAmount = Math.round(recommendedTodayExpenseAmountPerCategory.values()
+                .stream().reduce(0L, Long::sum)) / 1000 * 1000;
         return new RecommendationExpenseListResponse(
                 recommendedTodayTotalAmount,
                 message,
@@ -209,7 +210,7 @@ public class ExpenseController {
             details.add(new TodayExpenseResponse(
                         categoryId,
                         BudgetCategory.values()[categoryId.intValue() - 1].getCategory(),
-                        recommendedAmount,
+                        recommendedAmount / 1000 * 1000,
                         spentAmount,
                         risk));
         });
@@ -220,7 +221,49 @@ public class ExpenseController {
 
     private String getRisk(long recommendedAmount, long spentAmount) {
         if (recommendedAmount == 0) return "0%";
-        return (long)((double)spentAmount / recommendedAmount * 100) + "%";
+        return Math.round((double)spentAmount / recommendedAmount * 100) + "%";
     }
 
+    @GetMapping("/stat")
+    public ResponseEntity<ExpenseStatResponse> getExpenseStat(Authentication authentication) {
+        long userId = UserUtil.getUserIdFromJwt((JwtAuthenticationToken) authentication);
+        List<CalendarStatDto> monthlyStat = expenseService.getExpenseMonthlyStat(userId);
+        List<CalendarStatDto> weeklyStat = expenseService.getExpenseWeeklyStat(userId);
+        String relativeExpenseRate = expenseService.getExpenseRateCompareOtherUserStat(userId).longValue() + "%";
+        return ResponseEntity.ok(mapEntityToExpenseStatResponse(monthlyStat, weeklyStat, relativeExpenseRate));
+    }
+
+    private ExpenseStatResponse mapEntityToExpenseStatResponse(
+            List<CalendarStatDto> monthlyStat,
+            List<CalendarStatDto> weeklyStat,
+            String relativeExpenseRate) {
+
+        List<ExpenseStatCalendarCategoryResponse> againstLastMonth =
+                mapCalendarStatDtoToExpenseStatCategoryResponse(monthlyStat);
+
+        List<ExpenseStatCalendarCategoryResponse> againstLastWeek =
+                mapCalendarStatDtoToExpenseStatCategoryResponse(weeklyStat);
+
+        ExpenseStatUserResponse againstOtherUsers = new ExpenseStatUserResponse(relativeExpenseRate);
+        return new ExpenseStatResponse(
+                new ExpenseStatCalendarResponse(getLastTotalExpenseRate(monthlyStat), againstLastMonth),
+                new ExpenseStatCalendarResponse(getLastTotalExpenseRate(weeklyStat), againstLastWeek),
+                againstOtherUsers);
+    }
+
+    private List<ExpenseStatCalendarCategoryResponse> mapCalendarStatDtoToExpenseStatCategoryResponse(
+            List<CalendarStatDto> calendarStatDtos){
+        List<ExpenseStatCalendarCategoryResponse> againstLast = new ArrayList<>();
+        calendarStatDtos.forEach(statDto -> {
+            String expenseRate = statDto.expenseRate().longValue() + "%";
+            againstLast.add(new ExpenseStatCalendarCategoryResponse(
+                    statDto.categoryId(), statDto.categoryName(), expenseRate));
+        });
+        return againstLast;
+    }
+
+    private String getLastTotalExpenseRate(List<CalendarStatDto> calendarStatDtos) {
+        return (long) (calendarStatDtos.stream().mapToDouble(CalendarStatDto::expenseRate).sum() / calendarStatDtos.size())
+                + "%";
+    }
 }

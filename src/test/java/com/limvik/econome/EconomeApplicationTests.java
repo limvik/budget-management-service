@@ -24,8 +24,9 @@ import org.springframework.http.*;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.net.URI;
-import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -336,7 +337,7 @@ class EconomeApplicationTests {
 		String memo = "memo";
 		boolean excluded = false;
 
-		var request = new ExpenseRequest(Instant.parse(datetime), categoryId, amount, memo, excluded);
+		var request = new ExpenseRequest(LocalDateTime.parse(datetime, DateTimeFormatter.ISO_DATE_TIME), categoryId, amount, memo, excluded);
 
 		String url = "/api/v1/expenses";
 		HttpEntity<ExpenseRequest> entity = new HttpEntity<>(request, headers);
@@ -349,12 +350,12 @@ class EconomeApplicationTests {
 	@Test
 	@DisplayName("인증된 사용자의 정상적인 지출 기록 상세조회 요청")
 	void shouldGetExpenseIfValidUser() {
-		var datetime = "2023-12-31T09:30:00Z";
+		var datetime = "2023-12-31T09:30:00";
 		var categoryId = 1L;
 		var amount = 100000;
 		var memo = "memo";
 		var excluded = false;
-		var expense = Expense.builder().datetime(Instant.parse(datetime))
+		var expense = Expense.builder().datetime(LocalDateTime.parse(datetime, DateTimeFormatter.ISO_DATE_TIME))
 				.category(Category.builder().id(categoryId).build())
 				.amount(amount)
 				.memo(memo)
@@ -390,7 +391,7 @@ class EconomeApplicationTests {
 		var amount = 100000L;
 		var memo = "memo";
 		var excluded = false;
-		var expense = Expense.builder().datetime(Instant.parse(datetime))
+		var expense = Expense.builder().datetime(LocalDateTime.parse(datetime, DateTimeFormatter.ISO_DATE_TIME))
 				.category(Category.builder().id(categoryId).build())
 				.amount(amount)
 				.memo(memo)
@@ -403,9 +404,10 @@ class EconomeApplicationTests {
 		var updatedCategoryId = 2L;
 		var updatedAmount = 200000L;
 		var updatedMemo = "updated memo";
-		boolean updatedExcluded = true;
+		var updatedExcluded = true;
+		var parsedDateTime = LocalDateTime.parse(updatedDatetime, DateTimeFormatter.ISO_DATE_TIME);
 		var updateExpenseRequest = new ExpenseRequest(
-				Instant.parse(updatedDatetime), updatedCategoryId, updatedAmount, updatedMemo, updatedExcluded);
+				parsedDateTime, updatedCategoryId, updatedAmount, updatedMemo, updatedExcluded);
 
 		var headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
@@ -418,7 +420,7 @@ class EconomeApplicationTests {
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
 		var updatedExpense = expenseRepository.findById(expense.getId());
-		assertThat(updatedExpense.get().getDatetime()).isEqualTo(Instant.parse(updatedDatetime));
+		assertThat(updatedExpense.get().getDatetime()).isEqualTo(parsedDateTime);
 		assertThat(updatedExpense.get().getAmount()).isEqualTo(updatedAmount);
 		assertThat(updatedExpense.get().getMemo()).isEqualTo(updatedMemo);
 		assertThat(updatedExpense.get().isExcluded()).isEqualTo(updatedExcluded);
@@ -433,7 +435,7 @@ class EconomeApplicationTests {
 		var amount = 100000L;
 		var memo = "memo";
 		var excluded = false;
-		var expense = Expense.builder().datetime(Instant.parse(datetime))
+		var expense = Expense.builder().datetime(LocalDateTime.parse(datetime, DateTimeFormatter.ISO_DATE_TIME))
 				.category(Category.builder().id(categoryId).build())
 				.amount(amount)
 				.memo(memo)
@@ -464,7 +466,7 @@ class EconomeApplicationTests {
 			var amount = 10000L * i;
 			var memo = "memo" + i;
 			var excluded = i == 2;
-			var expense = Expense.builder().datetime(Instant.parse(datetime))
+			var expense = Expense.builder().datetime(LocalDateTime.parse(datetime, DateTimeFormatter.ISO_DATE_TIME))
 					.category(Category.builder().id(categoryId).build())
 					.amount(amount)
 					.memo(memo)
@@ -489,7 +491,7 @@ class EconomeApplicationTests {
 
 		for (int i = 0; i < 3; i++) {
 			assertThat(documentContext.read("$.expenses[%d].datetime".formatted(i), String.class))
-					.isEqualTo("2023-12-%dT09:%d:00Z".formatted((i+1)*2+10, (i+1)*2+20));
+					.isEqualTo("2023-12-%dT09:%d:00".formatted((i+1)*2+10, (i+1)*2+20));
 			assertThat(documentContext.read("$.expenses[%d].categoryId".formatted(i), Long.class))
 					.isEqualTo(1L);
 			assertThat(documentContext.read("$.expenses[%d].categoryName".formatted(i), String.class))

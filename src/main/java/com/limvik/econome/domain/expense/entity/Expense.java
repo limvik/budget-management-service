@@ -8,7 +8,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Builder
 @Getter
@@ -23,7 +23,7 @@ public class Expense {
     private Long id;
 
     @Column
-    private Instant datetime;
+    private LocalDateTime datetime;
 
     @Column
     private long amount;

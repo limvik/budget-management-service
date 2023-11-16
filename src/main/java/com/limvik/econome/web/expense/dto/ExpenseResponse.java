@@ -3,11 +3,11 @@ package com.limvik.econome.web.expense.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.io.Serializable;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 public record ExpenseResponse(
         Long id,
-        Instant datetime,
+        LocalDateTime datetime,
         @JsonInclude(JsonInclude.Include.NON_EMPTY)
         Long categoryId,
         @JsonInclude(JsonInclude.Include.NON_EMPTY)

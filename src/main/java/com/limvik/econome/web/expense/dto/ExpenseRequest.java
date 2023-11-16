@@ -1,16 +1,15 @@
 package com.limvik.econome.web.expense.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.Length;
 
 import java.io.Serializable;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 public record ExpenseRequest(
         @JsonInclude(JsonInclude.Include.NON_EMPTY)
-        Instant datetime,
+        LocalDateTime datetime,
         @NotNull
         Long categoryId,
         @JsonInclude(JsonInclude.Include.NON_EMPTY)
