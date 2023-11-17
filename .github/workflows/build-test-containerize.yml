@@ -6,6 +6,9 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  JWT_ISSUER: ${{ secrets.JWT_ISSUER }}
+  JWT_ACCESS_KEY: ${{ secrets.JWT_ACCESS_KEY }}
+  JWT_REFRESH_KEY: ${{ secrets.JWT_REFRESH_KEY }}
 jobs:
   app-build-test:
     runs-on: ubuntu-latest
