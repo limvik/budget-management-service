@@ -15,7 +15,7 @@ jobs:
       - name: Setup Java JDK
         uses: actions/setup-java@v3.13.0
         with:
-          distrbution: 'temurin'
+          distribution: 'temurin'
           java-version: '17'
       - run: ./gradlew build
   container-build-push:
