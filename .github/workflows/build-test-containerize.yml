@@ -17,6 +17,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
+      - run: chmod +x gradlew
       - run: ./gradlew build
   container-build-push:
     needs: app-build-test
