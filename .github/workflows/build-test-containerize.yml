@@ -25,7 +25,7 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
       - run: 
-          chmod +x gradlew
+          chmod +x gradlew && 
           ./gradlew build
 
       - name: Docker Login
