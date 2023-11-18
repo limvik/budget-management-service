@@ -24,8 +24,9 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-      - run: chmod +x gradlew
-      - run: ./gradlew build
+      - run: 
+          chmod +x gradlew
+          ./gradlew build
 
       - name: Docker Login
         uses: docker/login-action@v3.0.0
