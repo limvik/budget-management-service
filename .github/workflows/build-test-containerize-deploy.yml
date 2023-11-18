@@ -50,7 +50,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
   deploy:
     needs: app-build-test-container-build-push
-    runs-on: econome
+    runs-on: self-hosted
     steps:
       - name: Pull Image from GitHub Container Registry
         run: sudo docker pull ghcr.io/limvik/budget-management-service:main
