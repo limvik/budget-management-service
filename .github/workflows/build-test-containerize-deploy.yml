@@ -48,3 +48,13 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+  deploy:
+    needs: app-build-test-container-build-push
+    runs-on: econome
+    steps:
+      - name: Pull Image from GitHub Container Registry
+        run: sudo docker pull ghcr.io/limvik/budget-management-service:main
+      - name: Delete old container
+        run: sudo docker rm -f econome-app
+      - name: Run container
+        run: sudo docker run -d --env-file .env -p 80:9001 --name econome-app ghcr.io/limvik/budget-management-service:main
