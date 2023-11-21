@@ -8,6 +8,7 @@ import com.limvik.econome.domain.category.enums.BudgetCategory;
 import com.limvik.econome.domain.expense.entity.Expense;
 import com.limvik.econome.domain.user.entity.User;
 import com.limvik.econome.global.config.JwtConfig;
+import com.limvik.econome.global.exception.ErrorCode;
 import com.limvik.econome.global.security.jwt.provider.JwtProvider;
 import com.limvik.econome.infrastructure.budgetplan.BudgetPlanRepository;
 import com.limvik.econome.infrastructure.category.CategoryRepository;
@@ -400,6 +401,19 @@ class EconomeApplicationTests {
 	}
 
 	@Test
+	@DisplayName("인증된 사용자의 존재하지 않는 지출기록 상세조회 요청")
+	void shouldNotGetExpenseIfNotExistExpense() {
+
+		ResponseEntity<String> response = requestNotExistExpense(null, HttpMethod.GET);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+		DocumentContext documentContext = JsonPath.parse(response.getBody());
+		assertThat(documentContext.read("$.errorCode", String.class)).isEqualTo(ErrorCode.NOT_EXIST_EXPENSE.toString());
+		assertThat(documentContext.read("$.errorReason", String.class)).isEqualTo(ErrorCode.NOT_EXIST_EXPENSE.getMessage());
+
+	}
+
+	@Test
 	@DisplayName("인증된 사용자의 정상적인 지출기록 수정 요청")
 	void shouldUpdateExpenseIfValidUser() {
 		var datetime = "2023-12-31T09:30:00Z";
@@ -444,6 +458,28 @@ class EconomeApplicationTests {
 	}
 
 	@Test
+	@DisplayName("인증된 사용자의 존재하지 않는 지출기록 수정 요청")
+	void shouldNotUpdateExpenseIfNotExistExpense() {
+
+		var updatedDatetime = "2023-12-31T13:30:00Z";
+		var updatedCategoryId = 2L;
+		var updatedAmount = 200000L;
+		var updatedMemo = "updated memo";
+		var updatedExcluded = true;
+		var parsedDateTime = LocalDateTime.parse(updatedDatetime, DateTimeFormatter.ISO_DATE_TIME);
+		var updateExpenseRequest = new ExpenseRequest(
+				parsedDateTime, updatedCategoryId, updatedAmount, updatedMemo, updatedExcluded);
+
+		ResponseEntity<String> response = requestNotExistExpense(updateExpenseRequest, HttpMethod.PATCH);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+		DocumentContext documentContext = JsonPath.parse(response.getBody());
+		assertThat(documentContext.read("$.errorCode", String.class)).isEqualTo(ErrorCode.NOT_EXIST_EXPENSE.toString());
+		assertThat(documentContext.read("$.errorReason", String.class)).isEqualTo(ErrorCode.NOT_EXIST_EXPENSE.getMessage());
+
+	}
+
+	@Test
 	@DisplayName("인증된 사용자의 정상적인 지출기록 삭제 요청")
 	void shouldDeleteExpenseIfValidUser() {
 		var datetime = "2023-12-31T09:30:00Z";
@@ -470,6 +506,19 @@ class EconomeApplicationTests {
 
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
 		assertThat(expenseRepository.findById(expense.getId()).isEmpty()).isTrue();
+	}
+
+	@Test
+	@DisplayName("인증된 사용자의 존재하지 않는 지출기록 삭제 요청")
+	void shouldNotDeleteExpenseIfNotExistExpense() {
+
+		ResponseEntity<String> response = requestNotExistExpense(null, HttpMethod.DELETE);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+		DocumentContext documentContext = JsonPath.parse(response.getBody());
+		assertThat(documentContext.read("$.errorCode", String.class)).isEqualTo(ErrorCode.NOT_EXIST_EXPENSE.toString());
+		assertThat(documentContext.read("$.errorReason", String.class)).isEqualTo(ErrorCode.NOT_EXIST_EXPENSE.getMessage());
+
 	}
 
 	@Test
@@ -519,6 +568,17 @@ class EconomeApplicationTests {
 		}
 		assertThat(documentContext.read("$.totalAmount", Long.class)).isEqualTo(190000L);
 		assertThat(documentContext.read("$.totalAmountForCategory", Long.class)).isEqualTo(100000L);
+	}
+
+	private <T> ResponseEntity<String> requestNotExistExpense(T body, HttpMethod httpMethod) {
+		long notExistExpenseId = 9999999L;
+
+		var headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.set("Authorization", "Bearer " + accessToken);
+		String url = "/api/v1/expenses/" + notExistExpenseId;
+		HttpEntity<T> request = new HttpEntity<>(body, headers);
+		return restTemplate.exchange(url, httpMethod, request, String.class);
 	}
 
 }
