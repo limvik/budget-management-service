@@ -147,11 +147,27 @@ class EconomeApplicationTests {
 	}
 
 	@Test
-	@DisplayName("유효하지 않은 access token으로 엔드포인트 요청")
-	void shouldReturn401UnauthorizedIfNotValidToken() {
-		String invalidAccessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9." +
+	@DisplayName("기한이 지난 access token으로 엔드포인트 요청")
+	void shouldReturn401UnauthorizedIfExpiredToken() {
+		String expiredAccessToken = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9." +
 				"eyJpc3MiOiJsaW12aWtfZWNvbm9tZSIsImlhdCI6MTY5OTY3NDk5NSwiZXhwIjoxNjk5Njc1NTk1LCJzdWIiOiI4In0." +
 				"6uvQXPz8WwXcXoNYBylmS1QWvyfdnjRSbNOg_54aP5g3jWJu7OfVugfuGb14UVJU1umMMj5Nn2KMQn4ASTiYsg";
+
+		var headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.set("Authorization", "Bearer " + expiredAccessToken);
+
+		HttpEntity<String> request = new HttpEntity<>(null, headers);
+		ResponseEntity<String> response = restTemplate.exchange(
+				"/api/v1/test", HttpMethod.POST, request, String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+	}
+
+	@Test
+	@DisplayName("JWT가 아닌 문자열로 엔드포인트 요청")
+	void shouldReturn401UnauthorizedIfInvalidToken() {
+		String invalidAccessToken = "JWT가.아닌.문자열";
 
 		var headers = new HttpHeaders();
 		headers.setContentType(MediaType.APPLICATION_JSON);
