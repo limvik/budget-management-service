@@ -202,6 +202,26 @@ class EconomeApplicationTests {
 	}
 
 	@Test
+	@DisplayName("데이터베이스에 존재하지 않는 refresh token으로 access token 재발급")
+	void shouldNotReturnAccessTokenIfNotInDatabaseRefreshToken() {
+
+		var headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.set("Authorization", "Bearer " + jwtProvider.generateRefreshToken(user));
+
+		HttpEntity<String> request = new HttpEntity<>(null, headers);
+		ResponseEntity<String> response = restTemplate.exchange(
+				"/api/v1/users/token", HttpMethod.POST, request, String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+		DocumentContext documentContext = JsonPath.parse(response.getBody());
+		assertThat(documentContext.read("$.errorCode", String.class))
+				.isEqualTo(ErrorCode.INVALID_TOKEN.toString());
+		assertThat(documentContext.read("$.errorReason", String.class))
+				.isEqualTo(ErrorCode.INVALID_TOKEN.getMessage());
+	}
+
+	@Test
 	@DisplayName("카테고리 목록 저장 여부 확인")
 	void shouldSaveAllCategoriesInEnum() {
 		List<Category> categories = categoryRepository.findAll();
