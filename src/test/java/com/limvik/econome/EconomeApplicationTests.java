@@ -239,6 +239,37 @@ class EconomeApplicationTests {
 	}
 
 	@Test
+	@DisplayName("인증된 사용자의 중복 예산 설정")
+	void shouldNotCreateBudgetPlanIfDuplicatedBudgetPlan() {
+		List<BudgetPlanRequest> requests = new ArrayList<>();
+		for (long i = 1; i <= BudgetCategory.values().length; i++) {
+			requests.add(new BudgetPlanRequest(i, 1000 * i));
+		}
+		var requestList = new BudgetPlanListRequest(requests);
+
+		var year = 2999;
+		var month = 11;
+
+		var headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.set("Authorization", "Bearer " + accessToken);
+		String url = "/api/v1/budget-plans?year=%d&month=%d".formatted(year, month);
+
+		HttpEntity<BudgetPlanListRequest> request1 = new HttpEntity<>(requestList, headers);
+		restTemplate.exchange(url, HttpMethod.POST, request1, String.class);
+		HttpEntity<BudgetPlanListRequest> request2 = new HttpEntity<>(requestList, headers);
+		ResponseEntity<String> response = restTemplate.exchange(
+				url, HttpMethod.POST, request2, String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+		DocumentContext documentContext = JsonPath.parse(response.getBody());
+		assertThat(documentContext.read("$.errorCode", String.class))
+				.isEqualTo(ErrorCode.DUPLICATED_BUDGET_PLAN.toString());
+		assertThat(documentContext.read("$.errorReason", String.class))
+				.isEqualTo(ErrorCode.DUPLICATED_BUDGET_PLAN.getMessage());
+	}
+
+	@Test
 	@DisplayName("인증된 사용자의 예산 데이터 조회")
 	void shouldGetBudgetPlansIfValidUser() {
 		var headers = new HttpHeaders();
@@ -288,6 +319,34 @@ class EconomeApplicationTests {
 			assertThat(budgetList.size()).isEqualTo(BudgetCategory.values().length);
 			assertThat(budgetPlan.getAmount()).isEqualTo(newBudget);
 		});
+
+	}
+
+	@Test
+	@DisplayName("인증된 사용자의 존재하지 않는 예산 데이터 수정")
+	void shouldNotUpdateBudgetPlanIfNotExistBudgetPlan() {
+		var headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+		headers.set("Authorization", "Bearer " + accessToken);
+
+		var newBudget = 20000L;
+		var requests = new ArrayList<BudgetPlanRequest>();
+		for (int i = 0; i < BudgetCategory.values().length; i++) {
+			requests.add(new BudgetPlanRequest(i + 1, newBudget));
+		}
+		var requestList = new BudgetPlanListRequest(requests);
+
+		String url = "/api/v1/budget-plans?year=%d&month=%d".formatted(3939, 12);
+		HttpEntity<BudgetPlanListRequest> request = new HttpEntity<>(requestList, headers);
+		ResponseEntity<String> response = restTemplate.exchange(
+				url, HttpMethod.PATCH, request, String.class);
+
+		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+		DocumentContext documentContext = JsonPath.parse(response.getBody());
+		assertThat(documentContext.read("$.errorCode", String.class))
+				.isEqualTo(ErrorCode.NOT_EXIST_BUDGET_PLAN.toString());
+		assertThat(documentContext.read("$.errorReason", String.class))
+				.isEqualTo(ErrorCode.NOT_EXIST_BUDGET_PLAN.getMessage());
 
 	}
 
