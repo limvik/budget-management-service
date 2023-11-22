@@ -5,7 +5,9 @@ import com.limvik.econome.global.exception.ErrorCode;
 import com.limvik.econome.global.exception.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jdk.jfr.ContentType;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.AuthenticationEntryPoint;
 
@@ -21,6 +23,7 @@ public class JwtEntryPoint implements AuthenticationEntryPoint {
                          AuthenticationException authException) throws IOException {
         response.addHeader(HttpHeaders.WWW_AUTHENTICATE, "Bearer");
         response.setStatus(ErrorCode.INVALID_TOKEN.getHttpStatus().value());
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         String jsonResponse = new ObjectMapper().writeValueAsString(
                 new ErrorResponse(ErrorCode.INVALID_TOKEN.name(), ErrorCode.INVALID_TOKEN.getMessage()));
         response.getWriter().write(jsonResponse);
