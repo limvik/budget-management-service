@@ -79,47 +79,50 @@ public class UserTest {
     @Order(1)
     @DisplayName("회원가입 성공")
     void shouldSignupWithReturn201IfValidSignupInfo() throws JsonProcessingException {
-        RestAssured.given(this.spec)
-                .accept(ContentType.JSON)
-                .contentType(ContentType.JSON)
-                .filter(document("users-signup", getSignupRequestFields()))
-                .body(objectMapper.writeValueAsString(getSignupRequestBody()))
+        RestAssured
+                .given(this.spec)
+                    .accept(ContentType.JSON)
+                    .contentType(ContentType.JSON)
+                    .filter(document("users-signup", getSignupRequestFields()))
+                    .body(objectMapper.writeValueAsString(getSignupRequestBody()))
                 .when()
-                .post("/api/v1/users/signup")
+                    .post("/api/v1/users/signup")
                 .then()
-                .statusCode(is(HttpStatus.CREATED.value()));
+                    .statusCode(is(HttpStatus.CREATED.value()));
     }
 
     @Test
     @Order(2)
     @DisplayName("회원가입 실패 - 사용자 이름 중복")
     void shouldNotSignupWithReturn409IfDuplicatedUsername() throws JsonProcessingException {
-        RestAssured.given(this.spec)
-                .accept(ContentType.JSON)
-                .contentType(ContentType.JSON)
-                .filter(document("users-signup-conflict"))
-                .body(objectMapper.writeValueAsString(getSignupRequestBody()))
+        RestAssured
+                .given(this.spec)
+                    .accept(ContentType.JSON)
+                    .contentType(ContentType.JSON)
+                    .filter(document("users-signup-conflict"))
+                    .body(objectMapper.writeValueAsString(getSignupRequestBody()))
                 .when()
-                .post("/api/v1/users/signup")
+                    .post("/api/v1/users/signup")
                 .then()
-                .statusCode(is(ErrorCode.DUPLICATED_USERNAME.getHttpStatus().value()))
-                .body("errorCode", is(ErrorCode.DUPLICATED_USERNAME.name()))
-                .body("errorReason", is(ErrorCode.DUPLICATED_USERNAME.getMessage()));
+                    .statusCode(is(ErrorCode.DUPLICATED_USERNAME.getHttpStatus().value()))
+                    .body("errorCode", is(ErrorCode.DUPLICATED_USERNAME.name()))
+                    .body("errorReason", is(ErrorCode.DUPLICATED_USERNAME.getMessage()));
     }
 
     @Test
     @Order(3)
     @DisplayName("회원가입 실패 - 잘못된 이메일 형식")
     void shouldNotSignupWithReturn422IfInvalidEmail() throws JsonProcessingException {
-        RestAssured.given(this.spec)
-                .accept(ContentType.JSON)
-                .contentType(ContentType.JSON)
-                .filter(document("users-signup-unprocessable"))
-                .body(objectMapper.writeValueAsString(getUnprocessableSignupRequestBody()))
+        RestAssured
+                .given(this.spec)
+                    .accept(ContentType.JSON)
+                    .contentType(ContentType.JSON)
+                    .filter(document("users-signup-unprocessable"))
+                    .body(objectMapper.writeValueAsString(getUnprocessableSignupRequestBody()))
                 .when()
-                .post("/api/v1/users/signup")
+                    .post("/api/v1/users/signup")
                 .then()
-                .statusCode(is(ErrorCode.UNPROCESSABLE_USERINFO.getHttpStatus().value()));
+                    .statusCode(is(ErrorCode.UNPROCESSABLE_USERINFO.getHttpStatus().value()));
     }
 
     private RequestFieldsSnippet getSignupRequestFields() {
@@ -169,52 +172,55 @@ public class UserTest {
     @Order(4)
     @DisplayName("로그인 성공")
     void shouldSigninWithReturn200AndTokensIfValidLoginInfo() throws JsonProcessingException {
-        refreshToken = RestAssured.given(this.spec)
-                .accept(ContentType.JSON)
-                .contentType(ContentType.JSON)
-                .filter(document("users-signin", getSigninRequestFields(), getSigninResponseFields()))
-                .body(objectMapper.writeValueAsString(getSigninRequestBody()))
+        refreshToken = RestAssured
+                .given(this.spec)
+                    .accept(ContentType.JSON)
+                    .contentType(ContentType.JSON)
+                    .filter(document("users-signin", getSigninRequestFields(), getSigninResponseFields()))
+                    .body(objectMapper.writeValueAsString(getSigninRequestBody()))
                 .when()
-                .post("/api/v1/users/signin")
+                    .post("/api/v1/users/signin")
                 .then()
-                .statusCode(is(HttpStatus.OK.value()))
-                .body(containsString("accessToken"))
-                .body(containsString("refreshToken"))
-                .extract().body().jsonPath().get("refreshToken");
+                    .statusCode(is(HttpStatus.OK.value()))
+                    .body(containsString("accessToken"))
+                    .body(containsString("refreshToken"))
+                    .extract().body().jsonPath().get("refreshToken");
     }
 
     @Test
     @Order(5)
     @DisplayName("로그인 실패 - 일치하는 사용자 정보 없음")
     void shouldNotSigninWithReturn401IfNoUser() throws JsonProcessingException {
-        RestAssured.given(this.spec)
-                .accept(ContentType.JSON)
-                .contentType(ContentType.JSON)
-                .filter(document("users-signin-unauthorized"))
-                .body(objectMapper.writeValueAsString(getNotExistUserSigninRequestBody()))
+        RestAssured
+                .given(this.spec)
+                    .accept(ContentType.JSON)
+                    .contentType(ContentType.JSON)
+                    .filter(document("users-signin-unauthorized"))
+                    .body(objectMapper.writeValueAsString(getNotExistUserSigninRequestBody()))
                 .when()
-                .post("/api/v1/users/signin")
+                    .post("/api/v1/users/signin")
                 .then()
-                .statusCode(is(ErrorCode.NOT_EXIST_USER.getHttpStatus().value()))
-                .body("errorCode", is(ErrorCode.NOT_EXIST_USER.name()))
-                .body("errorReason", is(ErrorCode.NOT_EXIST_USER.getMessage()));
+                    .statusCode(is(ErrorCode.NOT_EXIST_USER.getHttpStatus().value()))
+                    .body("errorCode", is(ErrorCode.NOT_EXIST_USER.name()))
+                    .body("errorReason", is(ErrorCode.NOT_EXIST_USER.getMessage()));
     }
 
     @Test
     @Order(6)
     @DisplayName("로그인 실패 - 잘못된 사용자 이름 형식")
     void shouldNotSigninWithReturn422IfInvalidUsername() throws JsonProcessingException {
-        RestAssured.given(this.spec)
-                .accept(ContentType.JSON)
-                .contentType(ContentType.JSON)
-                .filter(document("users-signin-unprocessable"))
-                .body(objectMapper.writeValueAsString(getUnprocessableSigninRequestBody()))
+        RestAssured
+                .given(this.spec)
+                    .accept(ContentType.JSON)
+                    .contentType(ContentType.JSON)
+                    .filter(document("users-signin-unprocessable"))
+                    .body(objectMapper.writeValueAsString(getUnprocessableSigninRequestBody()))
                 .when()
-                .post("/api/v1/users/signin")
+                    .post("/api/v1/users/signin")
                 .then()
-                .statusCode(is(ErrorCode.UNPROCESSABLE_USERINFO.getHttpStatus().value()))
-                .body("errorCode", is(ErrorCode.UNPROCESSABLE_USERINFO.name()))
-                .body("errorReason", is(ErrorCode.UNPROCESSABLE_USERINFO.getMessage()));
+                    .statusCode(is(ErrorCode.UNPROCESSABLE_USERINFO.getHttpStatus().value()))
+                    .body("errorCode", is(ErrorCode.UNPROCESSABLE_USERINFO.name()))
+                    .body("errorReason", is(ErrorCode.UNPROCESSABLE_USERINFO.getMessage()));
     }
 
     private RequestFieldsSnippet getSigninRequestFields() {
@@ -261,33 +267,35 @@ public class UserTest {
     @Order(7)
     @DisplayName("Access Token 갱신 성공")
     void shouldRefreshAccessTokenWithReturn200AndNewAccessToken() throws JsonProcessingException {
-        RestAssured.given(this.spec)
-                .accept(ContentType.JSON)
-                .contentType(ContentType.JSON)
-                .filter(document("users-token", getRefreshAccessTokenRequestHeader(), getRefreshAccessTokenResponseFields()))
-                .header("Authorization", "Bearer " + refreshToken)
+        RestAssured
+                .given(this.spec)
+                    .accept(ContentType.JSON)
+                    .contentType(ContentType.JSON)
+                    .filter(document("users-token", getRefreshAccessTokenRequestHeader(), getRefreshAccessTokenResponseFields()))
+                    .header("Authorization", "Bearer " + refreshToken)
                 .when()
-                .post("/api/v1/users/token")
+                    .post("/api/v1/users/token")
                 .then()
-                .statusCode(is(HttpStatus.OK.value()))
-                .body(containsString("accessToken"));
+                    .statusCode(is(HttpStatus.OK.value()))
+                    .body(containsString("accessToken"));
     }
 
     @Test
     @Order(8)
     @DisplayName("Access Token 갱신 실패 - 데이터베이스와 다른 Refresh Token")
     void shouldNotRefreshAccessTokenWithReturn401IfInvalidToken() {
-        RestAssured.given(this.spec)
-                .accept(ContentType.JSON)
-                .contentType(ContentType.JSON)
-                .filter(document("users-token-invalid", getRefreshAccessTokenRequestHeader()))
-                .header("Authorization", "Bearer " + getFakeToken())
+        RestAssured
+                .given(this.spec)
+                    .accept(ContentType.JSON)
+                    .contentType(ContentType.JSON)
+                    .filter(document("users-token-invalid", getRefreshAccessTokenRequestHeader()))
+                    .header("Authorization", "Bearer " + getFakeToken())
                 .when()
-                .post("/api/v1/users/token")
+                    .post("/api/v1/users/token")
                 .then()
-                .statusCode(is(ErrorCode.INVALID_TOKEN.getHttpStatus().value()))
-                .body("errorCode", is(ErrorCode.INVALID_TOKEN.name()))
-                .body("errorReason", is(ErrorCode.INVALID_TOKEN.getMessage()));;
+                    .statusCode(is(ErrorCode.INVALID_TOKEN.getHttpStatus().value()))
+                    .body("errorCode", is(ErrorCode.INVALID_TOKEN.name()))
+                    .body("errorReason", is(ErrorCode.INVALID_TOKEN.getMessage()));;
     }
 
     private RequestHeadersSnippet getRefreshAccessTokenRequestHeader() {
