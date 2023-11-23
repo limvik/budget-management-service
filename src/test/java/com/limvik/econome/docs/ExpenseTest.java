@@ -310,7 +310,7 @@ public class ExpenseTest {
         var expenseRequest = getExpenseRequest();
         return new ExpenseResponse(
                 createdExpenseId,
-                LocalDateTime.parse(expenseRequest.datetime().minusNanos(25000).toString().substring(0, expenseRequest.datetime().toString().lastIndexOf("."))),
+                expenseRepository.findById(createdExpenseId).get().getDatetime(),
                 expenseRequest.categoryId(),
                 BudgetCategory.values()[(int)(expenseRequest.categoryId() - 1)].getCategory(),
                 expenseRequest.amount(),
