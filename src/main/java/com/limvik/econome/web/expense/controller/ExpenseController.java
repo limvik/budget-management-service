@@ -118,7 +118,7 @@ public class ExpenseController {
      */
     private long getTotalAmount(List<Expense> expenses) {
         return expenses.stream()
-                .filter(expense -> !expense.isExcluded())
+                .filter(expense -> !expense.getExcluded())
                 .mapToLong(Expense::getAmount)
                 .sum();
     }
@@ -132,7 +132,7 @@ public class ExpenseController {
      */
     private long getTotalAmountForCategory(List<Expense> expenses, Long categoryId) {
         return expenses.stream()
-                .filter(expense -> expense.getCategory().getId().equals(categoryId) && !expense.isExcluded())
+                .filter(expense -> expense.getCategory().getId().equals(categoryId) && !expense.getExcluded())
                 .mapToLong(Expense::getAmount)
                 .sum();
     }
@@ -145,7 +145,7 @@ public class ExpenseController {
                 expense.getCategory().getName().getCategory(),
                 expense.getAmount(),
                 expense.getMemo(),
-                expense.isExcluded()
+                expense.getExcluded()
         );
     }
 

@@ -28,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("integration")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Disabled("Spring REST Docs 용 테스트로 대체하였습니다.")
 public class EconomeRecommendationTests {
 
     @Autowired

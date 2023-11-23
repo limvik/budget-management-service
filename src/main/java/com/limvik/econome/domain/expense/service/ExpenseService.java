@@ -35,11 +35,10 @@ public class ExpenseService {
     }
 
     @Transactional
-    public Expense updateExpense(Expense expense) {
-        if (expenseRepository.existsByUserAndId(expense.getUser(), expense.getId()))
-            return expenseRepository.save(expense);
-        else
-            throw new ErrorException(ErrorCode.NOT_EXIST_EXPENSE);
+    public void updateExpense(Expense updateExpense) {
+        var expense = expenseRepository.findByUserAndId(updateExpense.getUser(), updateExpense.getId())
+                .orElseThrow(() -> new ErrorException(ErrorCode.NOT_EXIST_EXPENSE));
+        expense.update(updateExpense);
     }
 
     @Transactional(readOnly = true)
@@ -142,6 +141,7 @@ public class ExpenseService {
             thisExpenses.stream()
                     .filter(sumCategory -> sumCategory.getCategoryId().equals(lastExpense.getCategoryId()))
                     .findFirst().ifPresent(sumCategory -> thisExpense.set(sumCategory.getAmount()));
+            // 지난 지출이 0일때를 고려하지 않음
             double expenseRate = (double) thisExpense.get() / lastExpense.getAmount() * 100;
             CalendarStatDto dto = new CalendarStatDto(
                     lastExpense.getCategoryId(),

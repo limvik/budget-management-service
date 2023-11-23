@@ -37,6 +37,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("integration")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
+@Disabled("Spring REST Docs 용 테스트로 대체하였습니다.")
 class EconomeApplicationTests {
 
 	@Autowired
@@ -440,6 +441,7 @@ class EconomeApplicationTests {
 		ResponseEntity<String> response = restTemplate.exchange(
 				url, HttpMethod.POST, entity, String.class);
 		assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
+		expenseRepository.flush();
 		assertThat(response.getHeaders().getLocation()).isEqualTo(URI.create(url + "/" + expenseRepository.count()));
 	}
 
@@ -448,7 +450,7 @@ class EconomeApplicationTests {
 	void shouldGetExpenseIfValidUser() {
 		var datetime = "2023-12-31T09:30:00";
 		var categoryId = 1L;
-		var amount = 100000;
+		var amount = 100000L;
 		var memo = "memo";
 		var excluded = false;
 		var expense = Expense.builder().datetime(LocalDateTime.parse(datetime, DateTimeFormatter.ISO_DATE_TIME))
@@ -532,7 +534,7 @@ class EconomeApplicationTests {
 		assertThat(updatedExpense.get().getDatetime()).isEqualTo(parsedDateTime);
 		assertThat(updatedExpense.get().getAmount()).isEqualTo(updatedAmount);
 		assertThat(updatedExpense.get().getMemo()).isEqualTo(updatedMemo);
-		assertThat(updatedExpense.get().isExcluded()).isEqualTo(updatedExcluded);
+		assertThat(updatedExpense.get().getExcluded()).isEqualTo(updatedExcluded);
 
 	}
 
