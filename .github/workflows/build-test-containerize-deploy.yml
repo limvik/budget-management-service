@@ -1,4 +1,4 @@
-name: build-test-containerize
+name: build-test-containerize-deploy
 on:
   push:
     branches:
