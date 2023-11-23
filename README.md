@@ -21,6 +21,7 @@
 - 기간: 2023-11-09 ~ 2023-11-16(8일, 소요 시간 약 50 시간)
 - 요구사항: https://bow-hair-db3.notion.site/90cba97a58a843e4a2563a226db3d5b5
 - 프로젝트 관리: [Github Projects 링크](https://github.com/users/limvik/projects/2)
+- [API 문서 링크](http://43.200.2.221/docs/index.html)
 
 ## 목차
 
@@ -40,7 +41,28 @@
 
 ## Skills
 
-![java](https://img.shields.io/badge/Java%2017-white?logo=openjdk&logoColor=black)<!-- 커피 아이콘은 Oracle에서 삭제 요청 https://github.com/simple-icons/simple-icons/issues/7374 -->
+<p align="center">
+  <img src="https://img.shields.io/badge/Java%2017-white?logo=openjdk&logoColor=black" alt="java">
+  <img src="https://img.shields.io/badge/Gradle-02303A?logo=gradle&logoColor=white" alt="gradle">
+  <br><br>
+  <img src="https://img.shields.io/badge/SpringBoot%203-6DB33F?logo=springboot&logoColor=white" alt="spring boot">
+  <img src="https://img.shields.io/badge/SpringSecurity%206-6DB33F?logo=springsecurity&logoColor=white" alt="spring security">
+  <img src="https://img.shields.io/badge/JWT-black?logo=JSON%20web%20tokens&logoColor=white" alt="JWT">
+  <br><br>
+  <img src="https://img.shields.io/badge/Spring%20Data%20JPA%20-6DB33F?logo=jpa&logoColor=white" alt="spring data jpa">
+  <img src="https://img.shields.io/badge/MySql%208-4479A1?logo=mysql&logoColor=white" alt="mysql">
+  <br><br>
+  <img src="https://img.shields.io/badge/Spring%20REST%20Docs%20-6DB33F?logo=springrestdocs&logoColor=white" alt="spring rest docs">
+  <br><br>
+  <img src="https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white" alt="docker">
+  <img src="https://img.shields.io/badge/Testcontainer-16d6c7?logo=linuxcontainers&logoColor=white" alt="testcontainer">
+  <br><br>
+  <img src="https://img.shields.io/badge/Postman-FF6C37?logo=postman&logoColor=white" alt="postman">
+  <img src="https://img.shields.io/badge/IntelliJ%20Idea-000000?logo=intellijidea&logoColor=white" alt="intellij-idea">
+</p>
+
+<!-- ![java](https://img.shields.io/badge/Java%2017-white?logo=openjdk&logoColor=black)
+커피 아이콘은 Oracle에서 삭제 요청 https://github.com/simple-icons/simple-icons/issues/7374 
 ![gradle](https://img.shields.io/badge/Gradle-02303A?logo=gradle&logoColor=white)
 
 ![spring boot](https://img.shields.io/badge/SpringBoot%203-6DB33F?logo=springboot&logoColor=white)
@@ -55,6 +77,7 @@
 
 ![postman](https://img.shields.io/badge/Postman-FF6C37?logo=postman&logoColor=white)
 ![intellij-idea](https://img.shields.io/badge/IntelliJ%20Idea-000000?logo=intellijidea&logoColor=white)
+-->
 
 ## ERD
 
@@ -109,7 +132,7 @@
 |예산 수정|/api/v1/budget-plans?year=&month=|PATCH|200(Ok)|예산 수정 성공|
 ||||401(Unauthorized)|유효하지 않은 AccessToken|
 ||||404(Not Found)|존재하지 않는 예산|
-|예산 추천|/api/v1/budget-plans/recommendations?budget=|GET|200(Ok)|추천 예산 조회 성공|
+|예산 추천|/api/v1/budget-plans/recommendations?amount=|GET|200(Ok)|추천 예산 조회 성공|
 ||||401(Unauthorized)|유효하지 않은 AccessToken|
 
 [목차로 이동](#목차)
