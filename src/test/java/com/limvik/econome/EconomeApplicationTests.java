@@ -448,7 +448,7 @@ class EconomeApplicationTests {
 	void shouldGetExpenseIfValidUser() {
 		var datetime = "2023-12-31T09:30:00";
 		var categoryId = 1L;
-		var amount = 100000;
+		var amount = 100000L;
 		var memo = "memo";
 		var excluded = false;
 		var expense = Expense.builder().datetime(LocalDateTime.parse(datetime, DateTimeFormatter.ISO_DATE_TIME))

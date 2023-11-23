@@ -26,13 +26,13 @@ public class Expense {
     private LocalDateTime datetime;
 
     @Column
-    private long amount;
+    private Long amount;
 
     @Column(length = 60)
     private String memo;
 
     @Column(name = "exclude_in_total")
-    private boolean excluded;
+    private Boolean excluded;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
@@ -41,5 +41,23 @@ public class Expense {
     @ManyToOne
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
+
+    public void update(Expense updateExpense) {
+        if (updateExpense.getDatetime() != null) {
+            this.datetime = updateExpense.getDatetime();
+        }
+        if (updateExpense.getAmount() != null && updateExpense.getAmount() >= 0) {
+            this.amount = updateExpense.getAmount();
+        }
+        if (updateExpense.getMemo() != null) {
+            this.memo = updateExpense.getMemo();
+        }
+        if (updateExpense.getExcluded() != null) {
+            this.excluded = updateExpense.getExcluded();
+        }
+        if (updateExpense.getCategory() != null) {
+            this.category = updateExpense.getCategory();
+        }
+    }
 
 }
