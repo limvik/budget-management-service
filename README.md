@@ -2,6 +2,9 @@
 
 <p align="center">
   <img width="640" height="320" src="https://github.com/limvik/budget-management-service/assets/37972432/26624259-f239-477f-b230-79b227c2b081">
+  <br><br>
+  <img src="https://github.com/limvik/budget-management-service/actions/workflows/build-test-containerize-deploy.yml/badge.svg">
+  <br><br>
 </p>
 
 ## 개인 예산 관리 REST API
@@ -23,6 +26,7 @@
 
 - [Skills](#skills)
 - [ERD](#erd)
+- [배포 구조도](#배포-구조도)
 - [API Table](#api-table)
 - [구현 고려사항](#구현-고려사항)
   - [Refresh Token 클라이언트에 저장](#refresh-token-클라이언트에-저장)
@@ -32,6 +36,7 @@
   - [Instant 와 LocalDate 및 LocalDateTime 혼용으로 인한 불일치](#instant-와-localdate-및-localdatetime-혼용으로-인한-불일치)
 - [학습](#학습)
   - [Spring Security 흐름 다이어그램으로 정리](#spring-security-흐름-다이어그램으로-정리)
+  - [블로그 학습 기록](#블로그-학습-기록)
 
 ## Skills
 
@@ -68,6 +73,14 @@
 - 기타
   - 돈을 저장하려면 나중에 원화 외의 다른 통화를 사용하는 것도 고려해서 DECIMAL을 사용하는 것에 대해 고민했는데, `기능을 예상해서 개발하지 말라`는 피드백을 받아서 BIGINT로 진행하였습니다.
 
+[목차로 이동](#목차)
+
+## 배포 구조도
+
+![deployment](https://github.com/limvik/budget-management-service/assets/37972432/310f1ecc-9a1d-4990-8b38-21bc48ad214a)
+
+[목차로 이동](#목차)
+
 ## API Table
 
 ### 사용자(Users)
@@ -98,6 +111,8 @@
 ||||404(Not Found)|존재하지 않는 예산|
 |예산 추천|/api/v1/budget-plans/recommendations?budget=|GET|200(Ok)|추천 예산 조회 성공|
 ||||401(Unauthorized)|유효하지 않은 AccessToken|
+
+[목차로 이동](#목차)
 
 ### 지출(Expenses)
 
@@ -146,6 +161,8 @@ Refresh Token을 클라이언트에 저장하는 것은 항상 탈취 가능성�
 `마감일까지 구현할 수 있을 가능성이 적어` 배운대로 Refresh Token과 Access Token을 로그인 시에 반환하고, Access Token 만료 시 Refresh Token으로 갱신된 Access Token을 발급받을 수 있도록 구현하였습니다.
 
 대신 모든 엔드포인트가 사용자의 많은 정보를 필요로 하는것은 아니므로, 사용자의 식별자만 토큰에 저장하여 정보유출을 최소화했습니다.
+
+---
 
 ### 카테고리 항목 선정
 
@@ -216,6 +233,10 @@ testImplementation 'org.apache.httpcomponents:httpclient:4.5.14'
 
 시간이 부족하고 Test에만 사용할 예정이므로 크게 고민할 필요가 없다고 판단했습니다. 그리고 TestRestTemplate으로 HTTP `PATCH` method를 지정하기 위해서는 필요했던 라이브러리기 때문에, 라이브러리를 추가하여 문제를 해결하였습니다.
 
+---
+
+[목차로 이동](#목차)
+
 ### Instant 와 LocalDate 및 LocalDateTime 혼용으로 인한 불일치
 
 #### 상황
@@ -236,6 +257,10 @@ testImplementation 'org.apache.httpcomponents:httpclient:4.5.14'
 
 하지만 이번 프로젝트에서 데이터베이스를 설계하면서도 외화를 고려한 DECIMAL 타입을 고려할 때 너무 나갔다는 피드백을 받았고, 현재 요구사항에 충실하게 개발을 했습니다. 이에 맞춰서 `LocalDate`와 `LocalDateTime`을 사용하기로 결정하였습니다.
 
+---
+
+[목차로 이동](#목차)
+
 ## 학습
 
 ### Spring Security 흐름 다이어그램으로 정리
@@ -245,3 +270,7 @@ testImplementation 'org.apache.httpcomponents:httpclient:4.5.14'
 ![spring-security-custom-authentication-filter-diagram](https://github.com/limvik/budget-management-service/assets/37972432/98f05a35-4b56-4f3d-b189-6c4b99ab5745)
 
 [목차로 이동](#목차)
+
+### 블로그 학습 기록
+
+- [Character Sets와 Collations 차이](https://limvik.github.io/posts/what-is-the-diffrence-charset-and-collations-in-mysql/)
