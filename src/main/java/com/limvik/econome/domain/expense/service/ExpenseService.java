@@ -108,11 +108,13 @@ public class ExpenseService {
         return sum.get();
     }
 
+    @Transactional(readOnly = true)
     public Map<Long, Long> getTodayExpenses(long userId) {
         return expenseRepository.findTodayExpensesPerCategory(userId).stream()
                 .collect(Collectors.toMap(map -> map.get("categoryId"), map -> map.get("amount")));
     }
 
+    @Transactional(readOnly = true)
     public List<CalendarStatDto> getExpenseMonthlyStat(long userId) {
         List<ExpenseProjection.SumCategory> lastMonthExpenses =
                 expenseRepository.findMonthlyExpensesPerCategoryByYearAndMonthAndDayBefore(
@@ -123,6 +125,7 @@ public class ExpenseService {
         return getCalendarStatDtos(lastMonthExpenses, thisMonthExpenses);
     }
 
+    @Transactional(readOnly = true)
     public List<CalendarStatDto> getExpenseWeeklyStat(long userId) {
         List<ExpenseProjection.SumCategory> lastWeekSameDayExpenses =
                 expenseRepository.findWeeklyExpensesPerCategoryByYearAndMonthAndDay(
@@ -136,22 +139,37 @@ public class ExpenseService {
     private List<CalendarStatDto> getCalendarStatDtos(List<ExpenseProjection.SumCategory> lastExpenses,
                                                       List<ExpenseProjection.SumCategory> thisExpenses) {
         List<CalendarStatDto> result = new ArrayList<>();
-        lastExpenses.forEach(lastExpense -> {
-            AtomicLong thisExpense = new AtomicLong(0L);
-            thisExpenses.stream()
-                    .filter(sumCategory -> sumCategory.getCategoryId().equals(lastExpense.getCategoryId()))
-                    .findFirst().ifPresent(sumCategory -> thisExpense.set(sumCategory.getAmount()));
-            // 지난 지출이 0일때를 고려하지 않음
-            double expenseRate = (double) thisExpense.get() / lastExpense.getAmount() * 100;
-            CalendarStatDto dto = new CalendarStatDto(
-                    lastExpense.getCategoryId(),
-                    BudgetCategory.values()[lastExpense.getCategoryId().intValue() - 1].getCategory(),
-                    expenseRate);
-            result.add(dto);
+        thisExpenses.forEach(thisExpense -> {
+            AtomicLong lastExpense = new AtomicLong(0L);
+            lastExpenses.stream()
+                    .filter(sumCategory -> sumCategory.getCategoryId().equals(thisExpense.getCategoryId()))
+                    .findFirst().ifPresent(sumCategory -> lastExpense.set(sumCategory.getAmount()));
+
+            result.add(getCalendarStatDto(thisExpense, lastExpense));
         });
         return result;
     }
 
+    private CalendarStatDto getCalendarStatDto(ExpenseProjection.SumCategory thisExpense,
+                                               AtomicLong lastExpense) {
+        return new CalendarStatDto(
+                thisExpense.getCategoryId(),
+                BudgetCategory.values()[thisExpense.getCategoryId().intValue() - 1].getCategory(),
+                getExpenseRateCompareLastExpense(thisExpense, lastExpense));
+    }
+
+    private double getExpenseRateCompareLastExpense(ExpenseProjection.SumCategory thisExpense,
+                                                    AtomicLong lastExpense) {
+        if (lastExpense.get() == 0L) {
+            return -1.0;
+        } else if (thisExpense.getAmount() == null || thisExpense.getAmount() == 0L) {
+            return 0.0;
+        } else {
+            return (double) thisExpense.getAmount() / lastExpense.get() * 100;
+        }
+    }
+
+    @Transactional(readOnly = true)
     public Double getExpenseRateCompareOtherUserStat(long userId) {
         return expenseRepository.findExpenseRateCompareOtherUser(userId);
     }
