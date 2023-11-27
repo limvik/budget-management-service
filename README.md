@@ -297,3 +297,4 @@ testImplementation 'org.apache.httpcomponents:httpclient:4.5.14'
 ### 블로그 학습 기록
 
 - [Character Sets와 Collations 차이](https://limvik.github.io/posts/what-is-the-diffrence-charset-and-collations-in-mysql/)
+- [Spring REST Docs를 사용하지 않기로 결정한 개인적인 이유](https://limvik.github.io/posts/review-spring-rest-docs/)
