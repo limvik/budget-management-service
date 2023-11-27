@@ -229,14 +229,14 @@ public class ExpenseController {
         long userId = UserUtil.getUserIdFromJwt((JwtAuthenticationToken) authentication);
         List<CalendarStatDto> monthlyStat = expenseService.getExpenseMonthlyStat(userId);
         List<CalendarStatDto> weeklyStat = expenseService.getExpenseWeeklyStat(userId);
-        String relativeExpenseRate = expenseService.getExpenseRateCompareOtherUserStat(userId).longValue() + "%";
+        Double relativeExpenseRate = expenseService.getExpenseRateCompareOtherUserStat(userId);
         return ResponseEntity.ok(mapEntityToExpenseStatResponse(monthlyStat, weeklyStat, relativeExpenseRate));
     }
 
     private ExpenseStatResponse mapEntityToExpenseStatResponse(
             List<CalendarStatDto> monthlyStat,
             List<CalendarStatDto> weeklyStat,
-            String relativeExpenseRate) {
+            Double relativeExpenseRate) {
 
         List<ExpenseStatCalendarCategoryResponse> againstLastMonth =
                 mapCalendarStatDtoToExpenseStatCategoryResponse(monthlyStat);
@@ -244,26 +244,57 @@ public class ExpenseController {
         List<ExpenseStatCalendarCategoryResponse> againstLastWeek =
                 mapCalendarStatDtoToExpenseStatCategoryResponse(weeklyStat);
 
-        ExpenseStatUserResponse againstOtherUsers = new ExpenseStatUserResponse(relativeExpenseRate);
+        String againstOtherUsers = convertRelativeExpenseRate(relativeExpenseRate);
+
         return new ExpenseStatResponse(
                 new ExpenseStatCalendarResponse(getLastTotalExpenseRate(monthlyStat), againstLastMonth),
                 new ExpenseStatCalendarResponse(getLastTotalExpenseRate(weeklyStat), againstLastWeek),
-                againstOtherUsers);
+                new ExpenseStatUserResponse(againstOtherUsers));
     }
 
     private List<ExpenseStatCalendarCategoryResponse> mapCalendarStatDtoToExpenseStatCategoryResponse(
             List<CalendarStatDto> calendarStatDtos){
         List<ExpenseStatCalendarCategoryResponse> againstLast = new ArrayList<>();
         calendarStatDtos.forEach(statDto -> {
-            String expenseRate = statDto.expenseRate().longValue() + "%";
+            String expenseRate = convertExpenseRateToString(statDto.expenseRate().longValue());
             againstLast.add(new ExpenseStatCalendarCategoryResponse(
                     statDto.categoryId(), statDto.categoryName(), expenseRate));
         });
         return againstLast;
     }
 
+    private String convertExpenseRateToString(long expenseRate) {
+        if (expenseRate == -1) {
+            return "N/A";
+        } else {
+            return expenseRate + "%";
+        }
+    }
+
     private String getLastTotalExpenseRate(List<CalendarStatDto> calendarStatDtos) {
-        return (long) (calendarStatDtos.stream().mapToDouble(CalendarStatDto::expenseRate).sum() / calendarStatDtos.size())
-                + "%";
+        if (calendarStatDtos.isEmpty()) return "0%";
+        if (isAllNotApplicableExpenseData(calendarStatDtos)) return "N/A";
+
+        return (long) (getSumOfExpenseRate(calendarStatDtos) / calendarStatDtos.size()) + "%";
+    }
+
+    private boolean isAllNotApplicableExpenseData(List<CalendarStatDto> calendarStatDtos) {
+        return calendarStatDtos.stream()
+                .allMatch(calendarStatDto -> calendarStatDto.expenseRate() == -1);
+    }
+
+    private double getSumOfExpenseRate(List<CalendarStatDto> calendarStatDtos) {
+        return calendarStatDtos.stream()
+                .filter(calendarStatDto -> calendarStatDto.expenseRate() != -1)
+                .mapToDouble(CalendarStatDto::expenseRate)
+                .sum();
+    }
+
+    private String convertRelativeExpenseRate(Double relativeExpenseRate) {
+        if (relativeExpenseRate == null) {
+            return "N/A";
+        } else {
+            return relativeExpenseRate.longValue() + "%";
+        }
     }
 }

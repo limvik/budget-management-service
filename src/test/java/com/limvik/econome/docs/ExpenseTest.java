@@ -662,7 +662,7 @@ public class ExpenseTest {
                     .get(EXPENSES_URL + "/stat")
                 .then()
                     .statusCode(is(HttpStatus.OK.value()))
-                    .body(is(objectMapper.writeValueAsString(getExpenseStatisticsResponse())));
+                    .body(is(objectMapper.writeValueAsString(getExpenseStatisticsResponse("100%"))));
     }
 
     private ResponseFieldsSnippet getExpenseStatisticsResponseFields() {
@@ -696,22 +696,37 @@ public class ExpenseTest {
                         .description("이번 달 다른 유저의 예산 대비 소비 비율 대비 나의 예산 대비 소비 비율"));
     }
 
+    @Test
+    @DisplayName("지출 통계 조회 성공 - 사용자가 오늘 지출했지만, 지난 소비 데이터와 다른 사용자 소비 데이터가 없는 경우")
+    void shouldGetExpenseStatisticsWithReturn200IfValidTokenButNoLastAndOtherUserData() throws JsonProcessingException {
+        createData(user, 0);
+        RestAssured
+                .given(this.spec)
+                .accept(ContentType.JSON)
+                .contentType(ContentType.JSON)
+                .header("Authorization", "Bearer " + accessToken)
+                .when()
+                .get(EXPENSES_URL + "/stat")
+                .then()
+                .statusCode(is(HttpStatus.OK.value()))
+                .body(is(objectMapper.writeValueAsString(getExpenseStatisticsResponse("N/A"))));
+    }
 
-    private ExpenseStatResponse getExpenseStatisticsResponse() {
+    private ExpenseStatResponse getExpenseStatisticsResponse(String expectedRate) {
         return new ExpenseStatResponse(
-                new ExpenseStatCalendarResponse("100%", getAgainstLast()),
-                new ExpenseStatCalendarResponse("100%", getAgainstLast()),
-                new ExpenseStatUserResponse("100%")
+                new ExpenseStatCalendarResponse(expectedRate, getAgainstLast(expectedRate)),
+                new ExpenseStatCalendarResponse(expectedRate, getAgainstLast(expectedRate)),
+                new ExpenseStatUserResponse(expectedRate)
         );
     }
 
-    private List<ExpenseStatCalendarCategoryResponse> getAgainstLast() {
+    private List<ExpenseStatCalendarCategoryResponse> getAgainstLast(String expectedRate) {
         List<ExpenseStatCalendarCategoryResponse> expenseStatCalendarCategoryResponses = new ArrayList<>();
         for (long categoryId = 1; categoryId <= COUNT_CATEGORY; categoryId++) {
             expenseStatCalendarCategoryResponses.add(new ExpenseStatCalendarCategoryResponse(
                     categoryId,
                     BudgetCategory.values()[(int) (categoryId-1)].getCategory(),
-                    "100%"
+                    expectedRate
             ));
         }
         return expenseStatCalendarCategoryResponses;
