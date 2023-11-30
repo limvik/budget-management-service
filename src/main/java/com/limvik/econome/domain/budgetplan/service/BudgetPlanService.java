@@ -26,20 +26,24 @@ public class BudgetPlanService {
     /**
      * 사용자가 지정한 카테고리별 예산 설정을 반영하여 저장소에 저장합니다.
      * @param budgetPlans 사용자가 예산 설정을 요청한 데이터
+     * @throws ErrorException 사용자가 설정한 예산이 이미 존재하는 경우
      * @return 저장된 데이터를 반환합니다.
      */
     @Transactional
     public List<BudgetPlan> createBudgetPlans(List<BudgetPlan> budgetPlans) {
-        if (isNotExistPlan(budgetPlans.get(0))) {
-            return budgetPlanRepository.saveAll(budgetPlans);
-        } else {
-            throw new ErrorException(ErrorCode.DUPLICATED_BUDGET_PLAN);
-        }
+        budgetPlans.forEach(budgetPlan -> {
+            if ( ! isNotExistPlan(budgetPlan)) {
+                throw new ErrorException(ErrorCode.DUPLICATED_BUDGET_PLAN);
+            }
+        });
+
+        return budgetPlanRepository.saveAll(budgetPlans);
     }
 
     /**
      * 기존에 사용자가 설정해둔 예산의 금액을 사용자 요청에 의해 수정합니다.
      * @param budgetPlans 금액이 수정된 기존 카테고리별 예산
+     * @throws ErrorException 사용자가 수정 요청한 예산이 존재하지 않는 경우
      */
     @Transactional
     public void updateBudgetPlans(List<BudgetPlan> budgetPlans) {
@@ -82,6 +86,8 @@ public class BudgetPlanService {
     public List<BudgetPlan> getBudgetRecommendations(long amount) {
         List<BudgetPlan> budgetPlans = budgetPlanRepository.findRecommendedBudgetPlans(amount);
         long totalAmount = budgetPlans.stream().mapToLong(BudgetPlan::getAmount).sum();
+
+        // 데이터베이스에서 불러올 때 소수점 연산으로 인해 총액과 차이나는 금액을 마지막 기타 카테고리에 반영
         budgetPlans.get(budgetPlans.size()-1).addAmount(amount - totalAmount);
         return budgetPlans;
     }
