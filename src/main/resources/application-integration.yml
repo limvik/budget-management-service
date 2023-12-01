@@ -1,5 +1,5 @@
 spring:
   datasource:
-    url: jdbc:tc:mysql:8.0.35:///?user=root?password=test
+    url: jdbc:tc:mysql:8.0.35:///?user=root?password=test?rewriteBatchedStatements=true&profileSQL=true&logger=Slf4JLogger&maxQuerySizeToLog=999999
   flyway:
     skip-default-callbacks: true
