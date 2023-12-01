@@ -5,11 +5,11 @@ import com.limvik.econome.domain.expense.entity.ExpenseProjection;
 import com.limvik.econome.domain.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.util.Streamable;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
@@ -27,7 +27,7 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
             "FUNCTION('DAY', e.datetime) < FUNCTION('DAY', ?2) " +
             "GROUP BY e.category.id " +
             "ORDER BY categoryId DESC")
-    List<Map<String, Long>> findThisMonthExpensesPerCategory(long userId, LocalDate date);
+    Streamable<ExpenseProjection.SumCategory> findThisMonthExpensesPerCategory(long userId, LocalDate date);
 
     @Query("SELECT e.category.id as categoryId, sum(e.amount) as amount " +
             "FROM Expense e " +
@@ -37,7 +37,7 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
             "AND FUNCTION('DAY', e.datetime) = FUNCTION('DAY', CURRENT_DATE) " +
             "GROUP BY e.category.id " +
             "ORDER BY categoryId DESC")
-    List<Map<String, Long>> findTodayExpensesPerCategory(long userId);
+    Streamable<ExpenseProjection.SumCategory> findTodayExpensesPerCategory(long userId);
 
     @Query("SELECT e.category.id as categoryId, sum(e.amount) as amount " +
             "FROM Expense e " +

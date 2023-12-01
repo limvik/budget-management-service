@@ -1,15 +1,16 @@
 package com.limvik.econome.infrastructure.budgetplan;
 
 import com.limvik.econome.domain.budgetplan.entity.BudgetPlan;
+import com.limvik.econome.domain.budgetplan.entity.BudgetPlanProjection;
 import com.limvik.econome.domain.category.entity.Category;
 import com.limvik.econome.domain.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.util.Streamable;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 
 public interface BudgetPlanRepository extends JpaRepository<BudgetPlan, Long> {
 
@@ -35,12 +36,12 @@ public interface BudgetPlanRepository extends JpaRepository<BudgetPlan, Long> {
             "GROUP BY bp.category.id, bp.category.name")
     List<BudgetPlan> findRecommendedBudgetPlans(long amount);
 
-    @Query("SELECT new map(bp.category.id as categoryId, sum(bp.amount) as amount) " +
+    @Query("SELECT bp.category.id as categoryId, sum(bp.amount) as amount " +
             "FROM BudgetPlan bp " +
             "WHERE bp.user.id = ?1 AND " +
             "FUNCTION('YEAR', bp.date) = FUNCTION('YEAR', ?2) AND " +
             "FUNCTION('MONTH', bp.date) = FUNCTION('MONTH', ?2) " +
             "GROUP BY bp.category.id")
-    List<Map<String, Long>> findThisMonthBudgetPerCategory(long userId, LocalDate date);
+    Streamable<BudgetPlanProjection.SumCategory> findThisMonthBudgetPerCategory(long userId, LocalDate date);
 
 }

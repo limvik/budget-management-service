@@ -67,26 +67,42 @@ public class ExpenseService {
         expenseRepository.delete(expense);
     }
 
+    /**
+     * 사용자가 지정한 이번달 카테고리별 예산에서 이번달 어제까지의 카테고리별 소비 지출 금액을 제외한 후 남은 날짜만큼 예산을 균등분배한 후 반환합니다.
+     * 만약 균등분배한 금액이 최소 일 소비액 보다 작다면, 최소 일 소비액을 반환합니다.
+     * 예산이 설정되지 않은 소비 지출 금액은 전체 카테고리에 균등 분배하여 차감합니다.
+     * @param userId 사용자 id
+     * @return 예산이 설정된 카테고리별 오늘의 추천 금액 반환
+     */
     @Transactional(readOnly = true)
     public Map<Long, Long> getTodayRecommendationExpenses(long userId) {
-        // 사용자 지정 월 예산 불러오기
-        List<Map<String, Long>> monthlyBudget = budgetPlanRepository.findThisMonthBudgetPerCategory(userId, LocalDate.now());
-        Map<Long, Long> monthlyBudgetMap = new HashMap<>();
-        monthlyBudget.forEach(map -> monthlyBudgetMap.put(map.get("categoryId"), map.get("amount")));
 
-        // 사용자 이번달 카테고리별 지출 합계 불러오기
-        List<Map<String, Long>> monthlyExpenses = expenseRepository.findThisMonthExpensesPerCategory(userId, LocalDate.now());
-        Map<Long, Long> monthlyExpensesMap = new HashMap<>();
-        monthlyExpenses.forEach(map -> monthlyExpensesMap.put(map.get("categoryId"), map.get("amount")));
+        Map<Long, Long> monthlyBudgetMap = getThisMonthBudgetPlans(userId);
+        Map<Long, Long> monthlyExpensesMap = getThisMonthExpensesBeforeToday(userId);
 
-        // 카테고리별 추천 금액 계산하기
+        return calculateRecommendations(monthlyBudgetMap, monthlyExpensesMap, userId);
+    }
+
+    private Map<Long, Long> getThisMonthBudgetPlans(long userId) {
+        return budgetPlanRepository.findThisMonthBudgetPerCategory(userId, LocalDate.now())
+                .get().collect(Collectors.toMap(budgetPlan -> budgetPlan.getCategoryId(), budgetPlan -> budgetPlan.getAmount()));
+    }
+
+    private Map<Long, Long> getThisMonthExpensesBeforeToday(long userId) {
+        return expenseRepository.findThisMonthExpensesPerCategory(userId, LocalDate.now())
+                .get().collect(Collectors.toMap(expense -> expense.getCategoryId(), expense -> expense.getAmount()));
+    }
+
+    private Map<Long, Long> calculateRecommendations(Map<Long, Long> monthlyBudgetMap,
+                                                     Map<Long, Long> monthlyExpensesMap,
+                                                     long userId) {
         int restDaysOfMonth = LocalDate.now().lengthOfMonth() - LocalDate.now().getDayOfMonth() + 1;
         long minimumDailyExpense = userRepository.findMinimumDailyExpenseById(userId);
         long expenseForNotCreatedBudgetPlan = getExpenseForNotCreatedBudgetPlan(monthlyBudgetMap, monthlyExpensesMap);
-        long penaltyForUnexpectedExpensePerCategory = expenseForNotCreatedBudgetPlan / monthlyBudget.size();
+        long penaltyForUnexpectedExpensePerCategory = expenseForNotCreatedBudgetPlan / monthlyBudgetMap.size();
         monthlyBudgetMap.forEach((categoryId, budget) -> {
             long monthlyExpensePerCategory = monthlyExpensesMap.getOrDefault(categoryId, 0L);
-            long todayRecommendationAmount = 
+            long todayRecommendationAmount =
                     (budget - monthlyExpensePerCategory - penaltyForUnexpectedExpensePerCategory) / restDaysOfMonth;
             monthlyBudgetMap.put(categoryId, Math.max(todayRecommendationAmount, minimumDailyExpense));
         });
@@ -110,8 +126,8 @@ public class ExpenseService {
 
     @Transactional(readOnly = true)
     public Map<Long, Long> getTodayExpenses(long userId) {
-        return expenseRepository.findTodayExpensesPerCategory(userId).stream()
-                .collect(Collectors.toMap(map -> map.get("categoryId"), map -> map.get("amount")));
+        return expenseRepository.findTodayExpensesPerCategory(userId).
+                get().collect(Collectors.toMap(expense -> expense.getCategoryId(), expense -> expense.getAmount()));
     }
 
     @Transactional(readOnly = true)
