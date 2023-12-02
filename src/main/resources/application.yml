@@ -29,6 +29,10 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        hbm2ddl:
+          auto: create
+        jdbc:
+          batch_size: 100
 
 jwt:
   issuer: ${JWT_ISSUER}
