@@ -535,9 +535,11 @@ public class ExpenseTest {
     }
 
     private RecommendationExpenseListResponse getExpenseRecommendationListResponse() {
+        String message = LocalDate.now().getDayOfMonth() == 1 ? "1일 이네요! 이번달도 새로운 마음으로 체계적인 지출 도전!" :
+                "오늘도 합리적인 소비 생활 화이팅!";
         return new RecommendationExpenseListResponse(
                 10000L * COUNT_CATEGORY,
-                "오늘도 합리적인 소비 생활 화이팅!",
+                message,
                 getExpenseRecommendationsResponse()
         );
     }
