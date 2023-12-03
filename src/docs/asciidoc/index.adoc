@@ -364,6 +364,8 @@ operation::expense-recommendations[snippets='request-headers,response-fields,req
 
 ====== 유효하지 않은 Access Token으로 요청하는 경우
 
+include::{snippets}/expense-recommendations-unauthorized/http-response.adoc[]
+
 ==== 오늘의 지출 안내
 
 `GET /api/v1/expenses/today`
