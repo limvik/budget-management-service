@@ -18,7 +18,7 @@
 
 ## 참고 사항
 
-- 기간: 2023-11-09 ~ 2023-11-16(8일, 소요 시간 약 50 시간)
+- 기간: 2023-11-09 ~ 2023-11-16(8일, 소요 시간 약 50 시간) / 이후 개선 사항 추가 적용 중
 - 요구사항: https://bow-hair-db3.notion.site/90cba97a58a843e4a2563a226db3d5b5
 - 프로젝트 관리: [Github Projects 링크](https://github.com/users/limvik/projects/2)
 - [API 문서 링크](http://43.200.2.221/docs/index.html)
@@ -35,6 +35,7 @@
 - [이슈 및 해결](#이슈-및-해결)
   - [TestRestTemplate 사용하여 401(Unauthorized) 수신 시 HttpRetryException 던짐](#testresttemplate-사용하여-401-수신-시-httpretryexception-던짐)
   - [Instant 와 LocalDate 및 LocalDateTime 혼용으로 인한 불일치](#instant-와-localdate-및-localdatetime-혼용으로-인한-불일치)
+  - [테스트 시간이 700ms 가 넘는 단일 테스트 항목](#테스트-시간이-700ms-가-넘는-단일-테스트-항목)
 - [학습](#학습)
   - [Spring Security 흐름 다이어그램으로 정리](#spring-security-흐름-다이어그램으로-정리)
   - [블로그 학습 기록](#블로그-학습-기록)
@@ -284,6 +285,28 @@ testImplementation 'org.apache.httpcomponents:httpclient:4.5.14'
 
 [목차로 이동](#목차)
 
+### 테스트 시간이 700ms 가 넘는 단일 테스트 항목
+
+#### 상황
+
+통계 기능의 경우 지난 달/지난 주 대비 지출 비율, 다른 사용자 대비 지출 비율 조회를 하므로 테스트를 위해 과거 데이터를 생성해야 합니다.
+
+모든 테스트 데이터를 생성한 후 테스트를 수행하면 단일 테스트 임에도 700ms가 넘는 굉장히 긴 시간을 소모하였습니다.
+
+#### 원인
+
+1. 테스트 편의를 위해 매월 현재의 날짜를 기준으로 지난 달 1일까지 매일 테스트 데이터를 생성(비교 대상인 다른 유저 데이터는 지난 달 1일부터 말일까지), 매월 말일에 가까워 질수록 테스트 데이터도 증가
+2. Hibernate 설정에 의해 테스트 데이터 INSERT 구문 Batch 처리 불가
+
+#### 해결
+
+1. 테스트 데이터를 오늘, 지난주 같을 날, 다음 달 같은 날만 생성하도록 변경하여 테스트 데이터 갯수를 줄이고, 동일한 로직을 테스트 하도록 수정하였습니다.
+2. Hibernate는 JPA에서 Generation Type을 `IDENTITY`로 설정하는 경우 INSERT 구문에 대한 Batch 처리가 불가능합니다. 그래서 Generation Type을 `SEQUENCE`로 변경하여 INSERT 구문을 Batch 처리하도록 하였습니다.
+
+그 결과 700ms 가 넘던 통계 기능 테스트 시간이 `200ms 초중반 수준으로 개선`되었습니다.
+
+[목차로 이동](#목차)
+
 ## 학습
 
 ### Spring Security 흐름 다이어그램으로 정리
@@ -298,3 +321,4 @@ testImplementation 'org.apache.httpcomponents:httpclient:4.5.14'
 
 - [Character Sets와 Collations 차이](https://limvik.github.io/posts/what-is-the-diffrence-charset-and-collations-in-mysql/)
 - [Spring REST Docs를 사용하지 않기로 결정한 개인적인 이유](https://limvik.github.io/posts/review-spring-rest-docs/)
+- [Spring Boot 에서 Hibernate 6 와 MySQL 8 사용 시 GenerationType.SEQUENCE 설정 방법](https://limvik.github.io/posts/sequence-generation-type-for-hibernate-6-and-mysql-8-in-spring-boot/)
