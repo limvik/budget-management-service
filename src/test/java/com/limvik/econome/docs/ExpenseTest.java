@@ -501,7 +501,7 @@ public class ExpenseTest {
     @Test
     @DisplayName("오늘 지출 추천 성공")
     void shouldGetExpenseRecommendationsWithReturn200IfValidToken() throws JsonProcessingException {
-        createData(user, LocalDate.now().getDayOfMonth() - 1);
+        createData(user, 2);
         RestAssured
                 .given(this.spec)
                     .accept(ContentType.JSON)
@@ -575,7 +575,7 @@ public class ExpenseTest {
     @Test
     @DisplayName("오늘의 지출 안내 성공")
     void shouldGetTodayExpenseWithReturn200IfValidToken() throws JsonProcessingException {
-        createData(user, LocalDate.now().getDayOfMonth() - 1);
+        createData(user, 2);
         RestAssured
                 .given(this.spec)
                     .accept(ContentType.JSON)
@@ -652,8 +652,8 @@ public class ExpenseTest {
     @Test
     @DisplayName("지출 통계 조회 성공")
     void shouldGetExpenseStatisticsWithReturn200IfValidToken() throws JsonProcessingException {
-        createData(user, LocalDate.now().getDayOfMonth() + LocalDate.now().minusMonths(1).lengthOfMonth() - 1);
-        createData(createNewUser(), LocalDate.now().getDayOfMonth() - 1);
+        createData(user, 2);
+        createData(createNewUser(), 2);
         RestAssured
                 .given(this.spec)
                     .accept(ContentType.JSON)
@@ -734,9 +734,9 @@ public class ExpenseTest {
         return expenseStatCalendarCategoryResponses;
     }
 
-    private void createData(User user, int minusDay) {
+    private void createData(User user, int until) {
         createBudgetPlan(user);
-        createExpensesFromToday(user, minusDay);
+        createExpenses(user, until);
     }
 
     private User createNewUser() {
@@ -757,7 +757,7 @@ public class ExpenseTest {
             BudgetPlan budgetPlan = BudgetPlan.builder()
                     .user(user)
                     .date(LocalDate.of(LocalDate.now().getYear(), LocalDate.now().getMonth(), 1))
-                    .amount(LocalDate.now().lengthOfMonth() * 10000L)
+                    .amount(LocalDateTime.now().getDayOfMonth() > 7 ? 20000L : 10000L)
                     .category(Category.builder().id(categoryId).build())
                     .build();
             budgetPlans.add(budgetPlan);
@@ -765,16 +765,21 @@ public class ExpenseTest {
         budgetPlanRepository.saveAllAndFlush(budgetPlans);
     }
 
-    private void createExpensesFromToday(User user, int minusDay) {
-        List<Expense> expenses = new ArrayList<>((LocalDate.now().getDayOfMonth() - 1) * COUNT_CATEGORY);
-        for (int day = 0; day <= minusDay; day++) {
+    private void createExpenses(User user, int until) {
+        List<Expense> expenses = new ArrayList<>();
+        LocalDateTime[] localDateTimes = {
+                LocalDateTime.now(),
+                LocalDateTime.now().minusWeeks(1),
+                LocalDateTime.now().minusMonths(1)};
+
+        for (int i = 0; i <= until; i++) {
             for (long categoryId = 1; categoryId <= COUNT_CATEGORY; categoryId++) {
                 expenses.add(Expense.builder()
                         .user(user)
-                        .datetime(LocalDateTime.now().minusDays(day))
+                        .datetime(localDateTimes[i])
                         .category(Category.builder().id(categoryId).build())
-                        .amount(10000L)
-                        .memo("오늘 지출")
+                        .amount(i == 2 && LocalDateTime.now().getDayOfMonth() > 7 ? 20000L : 10000L)
+                        .memo("지출")
                         .build());
             }
         }
