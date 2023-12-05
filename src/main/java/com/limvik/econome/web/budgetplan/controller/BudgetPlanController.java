@@ -3,6 +3,7 @@ package com.limvik.econome.web.budgetplan.controller;
 import com.limvik.econome.domain.budgetplan.entity.BudgetPlan;
 import com.limvik.econome.domain.budgetplan.service.BudgetPlanService;
 import com.limvik.econome.domain.category.entity.Category;
+import com.limvik.econome.domain.category.enums.BudgetCategory;
 import com.limvik.econome.domain.user.entity.User;
 import com.limvik.econome.global.security.authentication.JwtAuthenticationToken;
 import com.limvik.econome.web.budgetplan.dto.BudgetPlanListRequest;
@@ -94,7 +95,7 @@ public class BudgetPlanController {
         for (BudgetPlan budgetPlan : budgetPlanList) {
             BudgetPlanResponse budgetPlanResponse = new BudgetPlanResponse(
                     budgetPlan.getCategory().getId(),
-                    budgetPlan.getCategory().getName().getCategory(),
+                    BudgetCategory.values()[(int) (budgetPlan.getCategory().getId() - 1)].getCategory(),
                     budgetPlan.getAmount());
             budgetPlanResponseList.add(budgetPlanResponse);
         }

@@ -31,11 +31,9 @@ public class BudgetPlanService {
      */
     @Transactional
     public List<BudgetPlan> createBudgetPlans(List<BudgetPlan> budgetPlans) {
-        budgetPlans.forEach(budgetPlan -> {
-            if ( ! isNotExistPlan(budgetPlan)) {
-                throw new ErrorException(ErrorCode.DUPLICATED_BUDGET_PLAN);
-            }
-        });
+        if (hasExistPlan(budgetPlans)) {
+            throw new ErrorException(ErrorCode.DUPLICATED_BUDGET_PLAN);
+        }
 
         return budgetPlanRepository.saveAll(budgetPlans);
     }
@@ -47,22 +45,26 @@ public class BudgetPlanService {
      */
     @Transactional
     public void updateBudgetPlans(List<BudgetPlan> budgetPlans) {
-        budgetPlans.forEach(budgetPlan ->{
-            if (isNotExistPlan(budgetPlan))  {
-                throw new ErrorException(ErrorCode.NOT_EXIST_BUDGET_PLAN);
-            } else {
-                budgetPlanRepository.updateAmountByUserAndDateAndCategory(
-                        budgetPlan.getUser().getId(),
-                        budgetPlan.getCategory().getId(),
-                        budgetPlan.getDate(),
-                        budgetPlan.getAmount());
-            }
-        });
+        if (hasNotExistPlan(budgetPlans)) {
+            throw new ErrorException(ErrorCode.NOT_EXIST_BUDGET_PLAN);
+        }
+        budgetPlans.forEach(budgetPlan -> budgetPlanRepository.updateAmountByUserAndDateAndCategory(
+                budgetPlan.getUser().getId(),
+                budgetPlan.getCategory().getId(),
+                budgetPlan.getDate(),
+                budgetPlan.getAmount()));
     }
 
-    private boolean isNotExistPlan(BudgetPlan budgetPlan) {
-        return !budgetPlanRepository.existsByUserAndDateAndCategory(
-                budgetPlan.getUser(), budgetPlan.getDate(), budgetPlan.getCategory());
+    private boolean hasExistPlan(List<BudgetPlan> budgetPlans) {
+        return budgetPlanRepository.countByUserAndDateAndCategories(
+                budgetPlans.get(0).getUser(), budgetPlans.get(0).getDate(),
+                budgetPlans.stream().map(BudgetPlan::getCategory).toList()) != 0;
+    }
+
+    private boolean hasNotExistPlan(List<BudgetPlan> budgetPlans) {
+        return budgetPlanRepository.countByUserAndDateAndCategories(
+                budgetPlans.get(0).getUser(), budgetPlans.get(0).getDate(),
+                budgetPlans.stream().map(BudgetPlan::getCategory).toList()) != budgetPlans.size();
     }
 
     /**

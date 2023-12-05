@@ -14,7 +14,12 @@ import java.util.List;
 
 public interface BudgetPlanRepository extends JpaRepository<BudgetPlan, Long> {
 
-    boolean existsByUserAndDateAndCategory(User user, LocalDate date, Category category);
+    @Query("SELECT COUNT(*) " +
+            "FROM BudgetPlan bp " +
+            "WHERE bp.user = ?1 " +
+            "AND bp.date = ?2 " +
+            "AND bp.category IN (?3)")
+    long countByUserAndDateAndCategories(User user, LocalDate date, List<Category> categories);
 
     List<BudgetPlan> findAllByUserAndDate(User user, LocalDate date);
 
