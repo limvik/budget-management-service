@@ -92,10 +92,12 @@ public class BudgetPlanController {
 
     private BudgetPlanListResponse mapBudgetPlanListToResponseList(List<BudgetPlan> budgetPlanList) {
         List<BudgetPlanResponse> budgetPlanResponseList = new ArrayList<>();
+        BudgetCategory[] budgetCategories = BudgetCategory.values();
+
         for (BudgetPlan budgetPlan : budgetPlanList) {
             BudgetPlanResponse budgetPlanResponse = new BudgetPlanResponse(
                     budgetPlan.getCategory().getId(),
-                    BudgetCategory.values()[(int) (budgetPlan.getCategory().getId() - 1)].getCategory(),
+                    budgetCategories[(int) (budgetPlan.getCategory().getId() - 1)].getCategory(),
                     budgetPlan.getAmount());
             budgetPlanResponseList.add(budgetPlanResponse);
         }

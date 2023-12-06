@@ -1,6 +1,8 @@
 package com.limvik.econome.domain.budgetplan.service;
 
 import com.limvik.econome.domain.budgetplan.entity.BudgetPlan;
+import com.limvik.econome.domain.budgetplan.entity.BudgetPlanProjection;
+import com.limvik.econome.domain.category.entity.Category;
 import com.limvik.econome.domain.user.entity.User;
 import com.limvik.econome.global.exception.ErrorCode;
 import com.limvik.econome.global.exception.ErrorException;
@@ -86,7 +88,22 @@ public class BudgetPlanService {
      */
     @Transactional(readOnly = true)
     public List<BudgetPlan> getBudgetRecommendations(long amount) {
-        List<BudgetPlan> budgetPlans = budgetPlanRepository.findRecommendedBudgetPlans(amount);
+        List<BudgetPlanProjection.RecommendedBudget> budgetPlans =
+                budgetPlanRepository.findRecommendedBudgetPlans(amount);
+
+        return convertProjectedBudgetPlansToEntity(budgetPlans, amount);
+    }
+
+    private List<BudgetPlan> convertProjectedBudgetPlansToEntity(List<BudgetPlanProjection.RecommendedBudget> projectedBudgetPlans,
+                                                                 long amount) {
+
+        List<BudgetPlan> budgetPlans = projectedBudgetPlans.stream().map(budgetPlan ->
+                BudgetPlan.builder()
+                        .category(Category.builder().id(budgetPlan.getCategoryId()).build())
+                        .amount(budgetPlan.getAmount() / 10 * 10)
+                        .build())
+                .toList();
+
         long totalAmount = budgetPlans.stream().mapToLong(BudgetPlan::getAmount).sum();
 
         // 데이터베이스에서 불러올 때 소수점 연산으로 인해 총액과 차이나는 금액을 마지막 기타 카테고리에 반영

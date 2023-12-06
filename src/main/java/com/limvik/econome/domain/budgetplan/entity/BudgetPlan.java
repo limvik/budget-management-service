@@ -36,17 +36,6 @@ public class BudgetPlan {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    /**
-     * 예산 추천 시에 사용되는 생성자입니다.
-     * @param categoryId 카테고리 식별자
-     * @param budgetCategory 카테고리
-     * @param averageAmount 전체 평균
-     */
-    public BudgetPlan(long categoryId, BudgetCategory budgetCategory, double averageAmount) {
-        this.category = Category.builder().id(categoryId).name(budgetCategory).build();
-        this.amount = ((long) averageAmount) / 10 * 10; // 1원 단위 절삭
-    }
-
     public void addAmount(long amount) {
         this.amount += amount;
     }

@@ -7,4 +7,9 @@ public class BudgetPlanProjection {
         Long getAmount();
     }
 
+    public interface RecommendedBudget {
+        Long getCategoryId();
+        Long getAmount();
+    }
+
 }

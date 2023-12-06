@@ -35,11 +35,11 @@ public interface BudgetPlanRepository extends JpaRepository<BudgetPlan, Long> {
      * @param amount 사용자의 총 예산
      * @return 카테고리별 추천 금액 목록
      */
-    @Query("SELECT new com.limvik.econome.domain.budgetplan.entity.BudgetPlan(bp.category.id, bp.category.name, " +
-            "(avg(bp.amount) / (SELECT sum(bp2.amount) FROM BudgetPlan bp2) * :amount) as amount) " +
+    @Query("SELECT bp.category.id AS categoryId, " +
+            "(avg(bp.amount) / (SELECT sum(bp2.amount) FROM BudgetPlan bp2) * :amount) AS amount " +
             "FROM BudgetPlan bp " +
             "GROUP BY bp.category.id, bp.category.name")
-    List<BudgetPlan> findRecommendedBudgetPlans(long amount);
+    List<BudgetPlanProjection.RecommendedBudget> findRecommendedBudgetPlans(long amount);
 
     @Query("SELECT bp.category.id as categoryId, sum(bp.amount) as amount " +
             "FROM BudgetPlan bp " +
