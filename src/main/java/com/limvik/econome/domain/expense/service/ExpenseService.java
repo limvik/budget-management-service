@@ -84,13 +84,15 @@ public class ExpenseService {
     }
 
     private Map<Long, Long> getThisMonthBudgetPlans(long userId) {
-        return budgetPlanRepository.findThisMonthBudgetPerCategory(userId, LocalDate.now())
-                .get().collect(Collectors.toMap(budgetPlan -> budgetPlan.getCategoryId(), budgetPlan -> budgetPlan.getAmount()));
+        try (var budgetPlans = budgetPlanRepository.findThisMonthBudgetPerCategory(userId, LocalDate.now()).get()) {
+            return budgetPlans.collect(Collectors.toMap(budgetPlan -> budgetPlan.getCategoryId(), budgetPlan -> budgetPlan.getAmount()));
+        }
     }
 
     private Map<Long, Long> getThisMonthExpensesBeforeToday(long userId) {
-        return expenseRepository.findThisMonthExpensesPerCategory(userId, LocalDate.now())
-                .get().collect(Collectors.toMap(expense -> expense.getCategoryId(), expense -> expense.getAmount()));
+        try (var expenses = expenseRepository.findThisMonthExpensesPerCategory(userId, LocalDate.now()).get()) {
+            return expenses.collect(Collectors.toMap(expense -> expense.getCategoryId(), expense -> expense.getAmount()));
+        }
     }
 
     private Map<Long, Long> calculateRecommendations(Map<Long, Long> monthlyBudgetMap,
@@ -126,8 +128,9 @@ public class ExpenseService {
 
     @Transactional(readOnly = true)
     public Map<Long, Long> getTodayExpenses(long userId) {
-        return expenseRepository.findTodayExpensesPerCategory(userId).
-                get().collect(Collectors.toMap(expense -> expense.getCategoryId(), expense -> expense.getAmount()));
+        try (var expenses = expenseRepository.findTodayExpensesPerCategory(userId).get()) {
+            return expenses.collect(Collectors.toMap(expense -> expense.getCategoryId(), expense -> expense.getAmount()));
+        }
     }
 
     @Transactional(readOnly = true)
