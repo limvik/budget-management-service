@@ -66,7 +66,10 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
             "WHERE userExpense.user.id = ?1 AND otherUserExpense.user.id != ?1 AND " +
             "FUNCTION('YEAR', userExpense.datetime) = FUNCTION('YEAR', CURRENT_DATE) AND " +
             "FUNCTION('MONTH', userExpense.datetime) = FUNCTION('MONTH', CURRENT_DATE) AND " +
-            "FUNCTION('DAY', userExpense.datetime) <= FUNCTION('DAY', CURRENT_DATE)")
+            "FUNCTION('DAY', userExpense.datetime) <= FUNCTION('DAY', CURRENT_DATE) AND " +
+            "FUNCTION('YEAR', otherUserExpense.datetime) = FUNCTION('YEAR', CURRENT_DATE) AND " +
+            "FUNCTION('MONTH', otherUserExpense.datetime) = FUNCTION('MONTH', CURRENT_DATE) AND " +
+            "FUNCTION('DAY', otherUserExpense.datetime) <= FUNCTION('DAY', CURRENT_DATE)")
     Double findExpenseRateCompareOtherUser(long userId);
 
 }
