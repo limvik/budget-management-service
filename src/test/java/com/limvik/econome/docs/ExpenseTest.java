@@ -753,11 +753,12 @@ public class ExpenseTest {
     private void createBudgetPlan(User user) {
         // 예산이 없는 카테고리의 반환 여부 테스트를 위해 절반의 카테고리만 예산 설정
         List<BudgetPlan> budgetPlans = new ArrayList<>(COUNT_CATEGORY);
+        long restDays = LocalDate.now().lengthOfMonth() - LocalDate.now().getDayOfMonth() + 1;
         for (long categoryId = 1; categoryId <= COUNT_CATEGORY; categoryId++) {
             BudgetPlan budgetPlan = BudgetPlan.builder()
                     .user(user)
                     .date(LocalDate.of(LocalDate.now().getYear(), LocalDate.now().getMonth(), 1))
-                    .amount(LocalDateTime.now().getDayOfMonth() > 7 ? 20000L : 10000L)
+                    .amount(LocalDate.now().getDayOfMonth() > 7 ? 10000L + 10000L * restDays : 10000L * restDays)
                     .category(Category.builder().id(categoryId).build())
                     .build();
             budgetPlans.add(budgetPlan);
@@ -778,7 +779,7 @@ public class ExpenseTest {
                         .user(user)
                         .datetime(localDateTimes[i])
                         .category(Category.builder().id(categoryId).build())
-                        .amount(i == 2 && LocalDateTime.now().getDayOfMonth() > 7 ? 20000L : 10000L)
+                        .amount(i == 2 && LocalDate.now().getDayOfMonth() > 7 ? 20000L : 10000L)
                         .memo("지출")
                         .build());
             }
