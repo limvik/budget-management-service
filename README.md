@@ -36,6 +36,7 @@
   - [TestRestTemplate 사용하여 401(Unauthorized) 수신 시 HttpRetryException 던짐](#testresttemplate-사용하여-401-수신-시-httpretryexception-던짐)
   - [Instant 와 LocalDate 및 LocalDateTime 혼용으로 인한 불일치](#instant-와-localdate-및-localdatetime-혼용으로-인한-불일치)
   - [테스트 시간이 700ms 가 넘는 단일 테스트 항목](#테스트-시간이-700ms-가-넘는-단일-테스트-항목)
+  - [N+1 문제](#n-plus-one-problem)
 - [학습](#학습)
   - [Spring Security 흐름 다이어그램으로 정리](#spring-security-흐름-다이어그램으로-정리)
   - [블로그 학습 기록](#블로그-학습-기록)
@@ -304,6 +305,52 @@ testImplementation 'org.apache.httpcomponents:httpclient:4.5.14'
 2. Hibernate는 JPA에서 Generation Type을 `IDENTITY`로 설정하는 경우 INSERT 구문에 대한 Batch 처리가 불가능합니다. 그래서 Generation Type을 `SEQUENCE`로 변경하여 INSERT 구문을 Batch 처리하도록 하였습니다.
 
 그 결과 700ms 가 넘던 통계 기능 테스트 시간이 `200ms 초중반 수준으로 개선`되었습니다.
+
+[목차로 이동](#목차)
+
+<h3 id="n-plus-one-problem">N+1 문제</h3>
+
+#### 상황
+
+소비 지출(Expense) 및 예산(Budget) 객체와 @ManyToOne 관계에 있는 카테고리(Category) 객체의 카테고리 이름을 불러올 때 불필요한 Query가 추가로 요청되는 문제가 있었습니다.
+
+#### 원인
+
+JPA 사용 시 연관 객체를 불러오기 위해 추가적인 쿼리를 실행시키는 N+1 문제입니다.
+
+소비 지출 및 예산 객체에 포함되어 있는 카테고리 객체에서 카테고리 이름을 불러올 때 추가적인 쿼리가 수행됩니다.
+
+#### 해결
+
+잘 알려진 해결책으로, Join Query, Batch Size 설정, Fetch Join 등이 있습니다.
+
+하지만 추가적인 부하가 발생하는 것은 마찬가지 이므로, `Enum`에 유지하고 있는 카테고리 목록을 사용하기로 하였습니다.
+
+카테고리의 종류가 12가지 밖에 없고, 카테고리가 확장된다고 해도 사용자 편의를 위해 많이 늘어나지는 않을 것이기 때문에 `Enum`을 이용해도 향후에도 변경 없이 사용 가능합니다.
+
+그래서 연관 관계에 있는 `객체의 카테고리 id만 참조`하면 추가적인 쿼리를 발생 시키지 않으므로, 카테고리 Enum 에서 카테고리 id를 기준으로 카테고리 이름을 불러오도록 수정하였습니다.
+
+예를 들면, 아래와 같습니다.
+
+카테고리 정보가 담긴 Enum 클래스인 `BudgetCategory`에서 `values()` 메서드로 카테고리 목록을 배열로 받아온 후 id를 배열 index로 만들어 카테고리 이름을 받아옵니다.
+
+```java
+private BudgetPlanListResponse mapBudgetPlanListToResponseList(List<BudgetPlan> budgetPlanList) {
+    List<BudgetPlanResponse> budgetPlanResponseList = new ArrayList<>();
+    BudgetCategory[] budgetCategories = BudgetCategory.values();
+
+    for (BudgetPlan budgetPlan : budgetPlanList) {
+        BudgetPlanResponse budgetPlanResponse = new BudgetPlanResponse(
+                budgetPlan.getCategory().getId(),
+                budgetCategories[(int) (budgetPlan.getCategory().getId() - 1)].getCategory(),
+                budgetPlan.getAmount());
+        budgetPlanResponseList.add(budgetPlanResponse);
+    }
+    return new BudgetPlanListResponse(budgetPlanResponseList);
+}
+```
+
+Repository에서 카테고리 이름도 같이 불러오던 Query는 카테고리 id만 불러오도록 수정하였습니다.
 
 [목차로 이동](#목차)
 
