@@ -1,7 +1,6 @@
 package com.limvik.econome.domain.budgetplan.entity;
 
 import com.limvik.econome.domain.category.entity.Category;
-import com.limvik.econome.domain.category.enums.BudgetCategory;
 import com.limvik.econome.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -13,7 +12,6 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "budget_plans")
 public class BudgetPlan {
 
     @Id
